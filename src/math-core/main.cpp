@@ -176,6 +176,8 @@ void thread_run()
         count++;
         sleep_ms(50);
     }
+
+    set_show_cursor(true);
 }
 
 int main(int argc, char *argv[])
