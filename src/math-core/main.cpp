@@ -156,6 +156,8 @@ void thread_run()
     VirtualDevice virtualDevice(vec2i(screen_width, screen_height));
     RenderSystem renderSystem(&virtualDevice);
 
+    set_show_cursor(false);
+
     clear_screen();
     int count = 0;
     while (!exit_thread)
