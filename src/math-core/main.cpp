@@ -180,11 +180,24 @@ void thread_run()
     set_show_cursor(true);
 }
 
+#include <signal.h>
+std::thread *current_thread = nullptr;
+void signal_handler(int signal)
+{
+    exit_thread = true;
+    current_thread->join();
+    printf("\n");
+    exit(-1);
+}
+
 int main(int argc, char *argv[])
 {
     Path::setWorkingPath(Path::getExecutablePath(argv[0]));
 
     std::thread thread(thread_run);
+    current_thread = &thread;
+    signal(SIGINT, signal_handler);
+
     fgetc(stdin);
     exit_thread = true;
     thread.join();
