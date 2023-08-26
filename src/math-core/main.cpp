@@ -182,12 +182,19 @@ void thread_run()
 
 #include <signal.h>
 std::thread *current_thread = nullptr;
-void signal_handler(int signal)
+std::mutex  _mutex;
+void force_close(int signal)
 {
-    exit_thread = true;
-    current_thread->join();
-    printf("\n");
-    exit(-1);
+    {
+        std::unique_lock<std::mutex> lck(_mutex);
+        if (current_thread != nullptr) {
+            exit_thread = true;
+            current_thread->join();
+            current_thread = nullptr;
+            printf("\n");
+        }
+    }
+    exit(0);
 }
 
 int main(int argc, char *argv[])
@@ -196,11 +203,13 @@ int main(int argc, char *argv[])
 
     std::thread thread(thread_run);
     current_thread = &thread;
-    signal(SIGINT, signal_handler);
+    signal(SIGINT, force_close);
 
     fgetc(stdin);
-    exit_thread = true;
-    thread.join();
+
+    force_close(-1);
+    /*exit_thread = true;
+    thread.join();*/
 
     return 0;
 }
