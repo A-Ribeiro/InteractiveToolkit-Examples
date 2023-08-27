@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 
     // create index array
     std::vector<SortIndexu> ref_array(rnd_points.size());
-    for (size_t i; i < ref_array.size(); i++)
+    for (size_t i=0; i < ref_array.size(); i++)
     {
         ref_array[i].index = i;
         ref_array[i].toSort = SortToolu::floatToInt(rnd_points[i].distance);
