@@ -217,6 +217,7 @@ include_directories(${INTERACTIVETOOLKIT_INCLUDE_DIR})
 
 add_subdirectory(src/astar-on-roguelike-matrix)
 add_subdirectory(src/callback-handling)
+add_subdirectory(src/ease-core)
 add_subdirectory(src/event-handling)
 add_subdirectory(src/math-core)
 add_subdirectory(src/on-abort-handling)
