@@ -213,7 +213,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(libs/InteractiveToolkit "${CMAKE_BINARY_DIR}/lib/InteractiveToolkit")
 find_package(InteractiveToolkit REQUIRED)
-include_directories(${INTERACTIVETOOLKIT_INCLUDE_DIR})
+include_directories(${INTERACTIVETOOLKIT_INCLUDE_DIRS})
+add_compile_options(${INTERACTIVETOOLKIT_COMPILE_OPTIONS})
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${INTERACTIVETOOLKIT_LINK_OPTIONS}")
 
 add_subdirectory(src/astar-on-roguelike-matrix)
 add_subdirectory(src/callback-handling)
