@@ -223,6 +223,7 @@ add_subdirectory(src/ease-core)
 add_subdirectory(src/event-handling)
 add_subdirectory(src/math-core)
 add_subdirectory(src/on-abort-handling)
+add_subdirectory(src/pattern-match)
 add_subdirectory(src/random)
 add_subdirectory(src/sorting)
 
