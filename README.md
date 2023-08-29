@@ -37,6 +37,28 @@ make -j
 
 All binaries will be generated at ```InteractiveToolkit-Examples/build/bin``` folder.
 
+## Example Projects
+
+ - **src/astar-on-roguelike-matrix**: Roguelike map generation with A* path computing over it.
+
+ - **src/callback-handling**: std::bind and std::function alternative with easier assignment and comparison for functions, methods and lambdas.
+
+ - **src/ease-core**: Several damping animation equations.
+
+ - **src/event-handling**: Event treatment with support to subscribe several listeners to one event controller(dispatcher). Can be used with functions, methods and lambdas.
+
+ - **src/math-core**: Example of drawing a rotating cube in the terminal using the lib matrices and lib vectors.
+
+ - **src/on-abort-handling**: Handling abort event in runtime.
+
+ - **src/pattern-match**: Pattern match examples. Exact matching and approximated matching.
+
+ - **src/property**: Example of a property. When the internal value change, this class dispatch an event notifying all listeners its modification.
+
+ - **src/random**: Several random generation examples.
+
+ - **src/sorting**: O(n) Sort algorithm example (RadixSort).
+
 ## Authors
 
 ***Alessandro Ribeiro da Silva*** obtained his Bachelor's degree in Computer Science from Pontifical Catholic 
