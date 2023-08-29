@@ -55,7 +55,7 @@ All binaries will be generated at ```InteractiveToolkit-Examples/build/bin``` fo
 
  - **src/property**: Example of a property. When the internal value change, this class dispatch an event notifying all listeners its modification.
 
- - **src/random**: Several random generation examples.
+ - **src/random**: Several random generated values examples.
 
  - **src/sorting**: O(n) Sort algorithm example (RadixSort).
 
