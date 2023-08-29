@@ -25,6 +25,18 @@ __SSH__
 git clone --recurse-submodules git@github.com:A-Ribeiro/InteractiveToolkit-Examples.git
 ```
 
+## How to build?
+
+```bash
+cd InteractiveToolkit-Examples/
+mkdir build
+cd build
+cmake ..
+make -j
+```
+
+All binaries will be generated at ```InteractiveToolkit-Examples/build/bin``` folder.
+
 ## Authors
 
 ***Alessandro Ribeiro da Silva*** obtained his Bachelor's degree in Computer Science from Pontifical Catholic 
