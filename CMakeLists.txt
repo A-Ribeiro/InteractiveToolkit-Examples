@@ -227,4 +227,4 @@ add_subdirectory(src/pattern-match)
 add_subdirectory(src/property)
 add_subdirectory(src/random)
 add_subdirectory(src/sorting)
-
+add_subdirectory(src/test_shuffle)
