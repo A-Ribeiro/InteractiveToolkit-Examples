@@ -161,10 +161,10 @@ public:
 
         current_lrp = 0.0f;
         clear_on_next_frame = true;
-        pt_a = computeCurrentPT(0.0f);
-        pt_b = computeCurrentPT(0.0f);
         sleep_count = 0;
         current_index = 0;
+        pt_a = computeCurrentPT(0.0f);
+        pt_b = computeCurrentPT(0.0f);
     }
 
     vec2i computeCurrentPT(float current_lrp)
