@@ -1,4 +1,3 @@
-#define ITK_FORCE_USE_RSQRT_CARMACK
 #include <InteractiveToolkit/InteractiveToolkit.h>
 #include <iostream>
 
@@ -11,6 +10,8 @@ template <typename Tf, typename Tui>
 class CarmackOptimizer
 {
 public:
+    bool force_estimate_above_real_v;
+
     Tui estimative_var1;
     double iteration_var2;
     double iteration_var3;
@@ -20,6 +21,10 @@ public:
         Tf y_float;
         Tui y_uint;
     };
+
+    CarmackOptimizer() {
+        force_estimate_above_real_v = false;
+    }
 
     void setVars(Tui estimative_var1, double iteration_var2, double iteration_var3)
     {
@@ -53,8 +58,9 @@ public:
         double expected = (double)(1.0 / OP<double>::sqrt(x));
 
         double rc = v - expected;
-        if (rc > 0)
-            rc = 1.0;
+        if (force_estimate_above_real_v)
+            if (rc > 0)
+                rc = 1.0;
         rc = OP<double>::abs(rc);
 
         return rc;
@@ -183,7 +189,7 @@ int main(int argc, char *argv[])
     {
         std::cout << "FLOAT: " << std::endl;
 
-        CarmackOptimizer<float,uint32_t> optmin_float;
+        CarmackOptimizer<float, uint32_t> optmin_float;
         optmin_float.setVars(0x5F1FFFF9, 0.5, 3.0);
         std::cout << "starting error: " << optmin_float.error(4.0) << std::endl;
         optmin_float.adjustVar3();
@@ -197,11 +203,14 @@ int main(int argc, char *argv[])
     {
         std::cout << "DOUBLE: " << std::endl;
 
-        CarmackOptimizer<double,uint64_t> optmin_float;
+        CarmackOptimizer<double, uint64_t> optmin_float;
+        // special case for double...
+        optmin_float.force_estimate_above_real_v = true;
         optmin_float.setVars(0x5FE3FFFFFFFFFFF9, 0.5, 3.0);
         std::cout << "starting error: " << optmin_float.error(4.0) << std::endl;
         optmin_float.adjustVar3();
         optmin_float.adjustVar2();
+
         std::cout << " var2: " << std::setprecision(16) << std::defaultfloat << optmin_float.iteration_var2 << std::endl;
         std::cout << " var3: " << std::setprecision(16) << std::defaultfloat << optmin_float.iteration_var3 << std::endl;
         std::cout << " error: " << std::setprecision(16) << std::defaultfloat << optmin_float.error(4.0) << std::endl;
