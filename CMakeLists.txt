@@ -21,6 +21,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include(cmake_tools.cmake)
 #include(cmake_include.cmake)
 
+# create CMAKE_BUILD_TYPE for non-windows platform
+if( NOT WIN32 AND NOT CMAKE_BUILD_TYPE )
+    set( CMAKE_BUILD_TYPE Release CACHE STRING
+            "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
+            FORCE )
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS None Debug Release RelWithDebInfo MinSizeRel)
+endif()
+
 # configure compile vars
 if(WIN32)
     #
@@ -98,3 +106,5 @@ add_subdirectory(src/pattern-match)
 add_subdirectory(src/property)
 add_subdirectory(src/random)
 add_subdirectory(src/sorting)
+
+add_subdirectory(src/ipc-shared-buffer)
