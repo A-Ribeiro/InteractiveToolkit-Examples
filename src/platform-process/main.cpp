@@ -53,7 +53,6 @@ int main(int argc, char *argv[])
                     putc(buffer.data[i], stdout);
                 fflush(stdout);
             }
-            fflush(stdout);
         }
 
         raw_output.push_back(0);
