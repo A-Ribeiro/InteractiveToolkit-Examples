@@ -11,8 +11,8 @@ struct GlobalInfo {
 
 int main(int argc, char* argv[]) {
     Path::setWorkingPath(Path::getExecutablePath(argv[0]));
-    //Platform::ThreadDataSet::Instance()->setGlobalThreadPriority(Platform::ThreadPriority::Normal);
-    //Platform::Thread::staticInitialization();
+    Platform::ThreadDataSet::Instance()->setGlobalThreadPriority(Platform::ThreadPriority::Normal);
+    Platform::Thread::staticInitialization();
 
     Platform::Signal::Set([](int sngl){
         ITK_ABORT(true, "forced app finishing.\n");
@@ -35,9 +35,8 @@ int main(int argc, char* argv[]) {
         global_info_ipc.finishInitialization();
     }
 
-
     printf("<press enter to exit>\n");
-    fgetc(stdin);fgetc(stdin);fgetc(stdin);fgetc(stdin);fgetc(stdin);
+    fgetc(stdin);
 
     return 0;
 }

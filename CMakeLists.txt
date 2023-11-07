@@ -107,4 +107,5 @@ add_subdirectory(src/property)
 add_subdirectory(src/random)
 add_subdirectory(src/sorting)
 
+add_subdirectory(src/ipc-queue)
 add_subdirectory(src/ipc-shared-buffer)
