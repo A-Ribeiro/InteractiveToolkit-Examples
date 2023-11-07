@@ -111,4 +111,6 @@ add_subdirectory(src/ipc-queue)
 add_subdirectory(src/ipc-shared-buffer)
 
 add_subdirectory(src/platform-thread-queue)
+add_subdirectory(src/platform-process)
+
 
