@@ -113,5 +113,6 @@ add_subdirectory(src/platform-process)
 add_subdirectory(src/platform-thread-queue)
 
 add_subdirectory(src/socket-udp)
+add_subdirectory(src/socket-tcp)
 
 
