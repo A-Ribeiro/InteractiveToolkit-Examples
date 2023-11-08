@@ -19,8 +19,9 @@ int main(int argc, char *argv[])
 
     Platform::Signal::Set([](int sngl)
                           {
-        //ITK_ABORT(true, "forced app finishing.\n");
-        Platform::Thread::getMainThread()->interrupt(); });
+                              ITK_ABORT(true, "forced app finishing.\n")
+                              // Platform::Thread::getMainThread()->interrupt();
+                          });
 
     using ThreadInt = Platform::ThreadWithParameters<void(int)>;
     std::vector<ThreadInt *> threads;
