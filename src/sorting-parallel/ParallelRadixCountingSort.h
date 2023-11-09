@@ -33,9 +33,12 @@ namespace AlgorithmCore
                 if (bucket_count == -1)
                     bucket_count = threadpool->threadCount();
 
-                uint32_t counting[bucket_count];
-                uint32_t offset[bucket_count];
-                memset(counting, 0, sizeof(uint32_t) * bucket_count);
+                //uint32_t counting[bucket_count];
+                std::vector<uint32_t> counting(bucket_count);
+                //uint32_t offset[bucket_count];
+                std::vector<uint32_t> offset(bucket_count);
+
+                memset(counting.data(), 0, sizeof(uint32_t) * bucket_count);
 
                 Platform::ObjectBuffer buffer;
                 buffer.setSize(sizeof(AlgorithmCore::Sorting::SortIndexu) * count);
@@ -64,16 +67,15 @@ namespace AlgorithmCore
                     }
 
                     // compute offset
-                    uint32_t acc = counting[0];
-                    counting[0] = 0;
-                    for (uint32_t j = 1; j < bucket_count; j++)
+                    uint32_t acc = 0;
+                    for (uint32_t j = 0; j < bucket_count; j++)
                     {
                         uint32_t tmp = counting[j];
                         counting[j] = acc;
                         acc += tmp;
                     }
 
-                    memcpy(offset, counting, sizeof(uint32_t) * bucket_count);
+                    memcpy(offset.data(), counting.data(), sizeof(uint32_t) * bucket_count);
 
                     // place elements in the output array
                     for (uint32_t i = 0; i < count; i++)
