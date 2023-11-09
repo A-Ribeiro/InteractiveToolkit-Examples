@@ -1,7 +1,7 @@
 #pragma once
 
 #include <InteractiveToolkit/InteractiveToolkit.h>
-#include "ThreadPool.h"
+#include <InteractiveToolkit/Platform/ThreadPool.h>
 #include <InteractiveToolkit/Platform/Core/ObjectBuffer.h>
 
 namespace AlgorithmCore
