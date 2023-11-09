@@ -115,4 +115,6 @@ add_subdirectory(src/platform-thread-queue)
 add_subdirectory(src/socket-udp)
 add_subdirectory(src/socket-tcp)
 
+add_subdirectory(src/sorting-parallel)
+
 
