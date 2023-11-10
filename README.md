@@ -47,17 +47,31 @@ All binaries will be generated at ```InteractiveToolkit-Examples/build/bin``` fo
 
  - **src/event-handling**: Event treatment with support to subscribe several listeners to one event controller(dispatcher). Can be used with functions, methods and lambdas.
 
+ - **src/ipc-queue**: Example of creating shared memory objects (shm) using the memory area as a queue that transfers bytes through compatible processes.
+
+ - **src/ipc-shared-buffer**: Example of creating a fixed shared memory object (shm) using the memory area as a block of memory.
+
  - **src/math-core**: Example of drawing a rotating cube in the terminal using the lib matrices and lib vectors.
 
  - **src/on-abort-handling**: Handling abort event in runtime.
 
  - **src/pattern-match**: Pattern match examples. Exact matching and approximated matching.
 
+ - **src/platform-process**: Starting a child process triggering the execution of another executable binary file (on linux: .sh; on windows: .bat).
+
+ - **src/platform-thread-queue**: Using the thread abstraction and transfering data to it through a custom queue class controller.
+
  - **src/property**: Example of a property. When the internal value change, this class dispatch an event notifying all listeners its modification.
 
  - **src/random**: Several random generated values examples.
 
+ - **src/socket-tcp**: Example of using a TCP socket abstraction.
+
+ - **src/socket-udp**: Example of using an UDP socket abstraction.
+
  - **src/sorting**: O(n) Sort algorithm example (RadixSort).
+
+ - **src/sorting-parallel**: Using a threadpool to accelerate the sorting algorithm.
 
 ## Authors
 
