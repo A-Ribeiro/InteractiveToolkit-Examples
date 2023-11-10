@@ -1,10 +1,6 @@
 #include <InteractiveToolkit/InteractiveToolkit.h>
+
 #include <iostream>
-
-
-#include <InteractiveToolkit/Platform/ThreadPool.h>
-#include "ParallelRadixCountingSort.h"
-
 
 using namespace ITKCommon;
 using namespace MathCore;
@@ -19,9 +15,11 @@ struct PointDistance
 int main(int argc, char *argv[])
 {
     Path::setWorkingPath(Path::getExecutablePath(argv[0]));
-    Platform::ThreadPool threadPool;
+    Platform::ThreadPool threadPool( Platform::Thread::QueryNumberOfSystemThreads() );
 
     MathRandomExt<Random> mathRandom(Random::Instance());
+
+    printf("generating random points...\n");
 
     std::vector<PointDistance> rnd_points(50000000);
     vec2f origin = mathRandom.next<vec2f>();
@@ -34,6 +32,8 @@ int main(int argc, char *argv[])
     //
     // sort
     //
+
+    printf("[Single-Thread Sorting]\n");
 
     // create index array
     std::vector<SortIndexu> ref_array(rnd_points.size());
@@ -50,7 +50,9 @@ int main(int argc, char *argv[])
     RadixCountingSortu::sortIndex(ref_array.data(), ref_array.size());
     t.update();
 
-    printf("Single-Thread Time: %f sec\n", t.deltaTime);
+    printf("    Time: %f sec\n", t.deltaTime);
+
+    printf("[Multi-Thread Sorting]\n");
 
     // create index array
     for (size_t i=0; i < ref_array.size(); i++)
@@ -59,13 +61,11 @@ int main(int argc, char *argv[])
         ref_array[i].toSort = SortToolu::floatToInt(rnd_points[i].distance);
     }
 
-    
     t.update();
-    ParallelRadixCountingSort::sort( ref_array.data(), ref_array.size(), &threadPool, 128);
+    ParallelRadixCountingSortu::sortIndex( ref_array.data(), ref_array.size(), &threadPool);
     t.update();
 
-    printf("Multi-Thread Time: %f sec\n", t.deltaTime);
-
+    printf("    Time: %f sec\n", t.deltaTime);
 
     // Check sorting...
     bool sorted = true;
