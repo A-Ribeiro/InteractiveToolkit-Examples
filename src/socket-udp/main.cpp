@@ -86,9 +86,10 @@ void receive_packet_run()
             char hello_world[] = "Hello World!!!";
             if (!socket_server.write_buffer(in_addr, (uint8_t *)hello_world, (uint32_t)strlen(hello_world) + 1))
             {
-
-                printf("[server] WRITE ERROR!!! waiting... (%i) \n", count++);
-                Platform::Sleep::millis(10000);
+                printf("[server] WRITE ERROR: data not written(%i) \n", count++);
+                //Platform::Sleep::millis(300);
+                if (socket_server.isSignaled())
+                    break;
             }
         }
         else
