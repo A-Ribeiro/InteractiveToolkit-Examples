@@ -11,7 +11,7 @@ void send_packet_run(const char* ip)
     printf("UDP - SEND PACKET\n");
 
     Platform::SocketUDP socket_write;
-    socket_write.createFD(false, true, 1);
+    socket_write.createFD(false, true);
     socket_write.bind(); // ephemeral port and address...
 
     struct sockaddr_in server_addr = Platform::SocketUtils::mountAddress(ip, 5002);
@@ -61,7 +61,7 @@ void receive_packet_run()
     printf("UDP - RECEIVE PACKET\n");
 
     Platform::SocketUDP socket_server;
-    socket_server.createFD(true, true, 1);
+    socket_server.createFD(true, true);
     socket_server.bind("INADDR_ANY", 5002);
 
     struct sockaddr_in in_addr = {0};
