@@ -24,7 +24,7 @@ void connect(const std::string addr_ipv4)
     clientSocket.setNoDelay(true);
 
     char init[16] = "init";
-    printf("sending: \"init\" size: %lu bytes\n", sizeof(init));
+    printf("sending: \"init\" size: %lu bytes\n", (uint32_t)sizeof(init));
     if (!clientSocket.write_buffer(
         (uint8_t *)&init, 
         sizeof(init)))
@@ -111,7 +111,7 @@ void start_server(bool blocking = true)
         }
 
         // clear deleted threads
-        for (int i = threads.size() - 1; i >= 0; i--)
+        for (int i = (int)threads.size() - 1; i >= 0; i--)
         {
             if (!threads[i]->isAlive())
             {

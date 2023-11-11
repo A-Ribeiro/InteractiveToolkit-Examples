@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
         {
             if (child_stdout.read(&buffer)) {
                 raw_output.insert(raw_output.end(), buffer.data, buffer.data + buffer.size);
-                for(int i=0;i<buffer.size;i++)
+                for(int i=0;i<(int)buffer.size;i++)
                     putc(buffer.data[i], stdout);
                 fflush(stdout);
             }

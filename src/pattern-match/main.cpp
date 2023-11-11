@@ -23,8 +23,8 @@ int main(int argc, char *argv[])
     const char* input_txt = "Some Very Long Text Or Binary Content To Search.";
     const char* pattern_to_search = "Binary";
 
-    int index = array_index_of((const uint8_t*)input_txt,0,strlen(input_txt),
-    (const uint8_t*)pattern_to_search,strlen(pattern_to_search));
+    int index = array_index_of((const uint8_t*)input_txt,0, (int)strlen(input_txt),
+    (const uint8_t*)pattern_to_search,(int)strlen(pattern_to_search));
 
     printf("array_index_of: %i\n", index);
 

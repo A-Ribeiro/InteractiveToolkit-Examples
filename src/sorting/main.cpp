@@ -35,14 +35,14 @@ int main(int argc, char *argv[])
 
     // create index array
     std::vector<SortIndexu> ref_array(rnd_points.size());
-    for (size_t i=0; i < ref_array.size(); i++)
+    for (uint32_t i=0; i < (uint32_t)ref_array.size(); i++)
     {
         ref_array[i].index = i;
         ref_array[i].toSort = SortToolu::floatToInt(rnd_points[i].distance);
     }
 
     // sort O(n)
-    RadixCountingSortu::sortIndex(ref_array.data(), ref_array.size());
+    RadixCountingSortu::sortIndex(ref_array.data(), (uint32_t)ref_array.size());
 
     // draw sorted without move source array elements
     printf("Draw sorted content\nWithout move elements from array:\n");
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     printf("\n");
 
     // replace content
-    SortToolu::inplaceReplace(ref_array.data(), rnd_points.data(), ref_array.size());
+    SortToolu::inplaceReplace(ref_array.data(), rnd_points.data(), (uint32_t)ref_array.size());
 
     // show result
     printf("Draw sorted content\nElements from array were moved:\n");

@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 
     // create index array
     std::vector<SortIndexu> ref_array(rnd_points.size());
-    for (size_t i=0; i < ref_array.size(); i++)
+    for (uint32_t i=0; i < (uint32_t)ref_array.size(); i++)
     {
         ref_array[i].index = i;
         ref_array[i].toSort = SortToolu::floatToInt(rnd_points[i].distance);
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
     // sort O(n)
     t.update();
-    RadixCountingSortu::sortIndex(ref_array.data(), ref_array.size());
+    RadixCountingSortu::sortIndex(ref_array.data(), (uint32_t)ref_array.size());
     t.update();
 
     printf("    Time: %f sec\n", t.deltaTime);
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     printf("[Multi-Thread Sorting]\n");
 
     // create index array
-    for (size_t i=0; i < ref_array.size(); i++)
+    for (uint32_t i=0; i < (uint32_t)ref_array.size(); i++)
     {
         ref_array[i].index = i;
         ref_array[i].toSort = SortToolu::floatToInt(rnd_points[i].distance);

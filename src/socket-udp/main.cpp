@@ -24,7 +24,7 @@ void client_thread()
     {
         uint32_t bytes_written;
         if (!socket_write.write_buffer(server_addr,
-                                      (uint8_t *)buffer, strlen(buffer) + 1,
+                                      (uint8_t *)buffer, (uint32_t)strlen(buffer) + 1,
                                       &bytes_written))
         {
             if (socket_write.isSignaled())
@@ -85,7 +85,7 @@ void server_thread()
             printf("    Data from Client(%i) -> %s\n", count++, buffer);
 
             char hello_world[] = "Hello World!!!";
-            if (!socket_server.write_buffer(in_addr, (uint8_t *)hello_world, strlen(hello_world) + 1))
+            if (!socket_server.write_buffer(in_addr, (uint8_t *)hello_world, (uint32_t)strlen(hello_world) + 1))
             {
 
                 printf("[server] WRITE ERROR!!! waiting... (%i) \n", count++);
