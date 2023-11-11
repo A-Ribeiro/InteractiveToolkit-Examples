@@ -14,7 +14,7 @@ void send_packet_run(const char* ip)
     socket_write.createFD(false, true, 1);
     socket_write.bind(); // ephemeral port and address...
 
-    struct sockaddr_in server_addr = Platform::SocketUtils::mountAddress("127.0.0.1", 5002);
+    struct sockaddr_in server_addr = Platform::SocketUtils::mountAddress(ip, 5002);
 
     char buffer[] = "UDP Send.";
 
