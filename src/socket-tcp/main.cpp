@@ -132,7 +132,7 @@ void start_server(bool blocking = true)
             socket->setNoDelay(true);
 
             char client_str[16];
-            sprintf(client_str, "%s:%u", inet_ntoa(socket->getAddr().sin_addr), ntohs(socket->getAddr().sin_port));
+            sprintf(client_str, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));
 
             char initial_string[16] = {0};
             uint32_t read_feedback;
