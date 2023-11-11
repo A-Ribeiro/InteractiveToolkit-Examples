@@ -35,7 +35,7 @@ void connect(const std::string addr_ipv4)
     }
 
     printf("receiving...\n");
-    char response[32];
+    char response[64];
     uint32_t read_feedback;
     if (!clientSocket.read_buffer(
             (uint8_t *)&response,
@@ -131,7 +131,7 @@ void start_server(bool blocking = true)
             Platform::SocketTCP *socket = clientSocket;
             socket->setNoDelay(true);
 
-            char client_str[16];
+            char client_str[32];
             sprintf(client_str, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));
 
             char initial_string[16] = {0};
@@ -147,7 +147,7 @@ void start_server(bool blocking = true)
 
             Platform::Sleep::millis(1000);
 
-            char response[32];
+            char response[64];
             uint32_t write_feedback;
             sprintf(response, "Your IP is: %s", client_str);
 
