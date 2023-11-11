@@ -6,9 +6,9 @@
 
 using namespace ITKCommon;
 
-void client_thread()
+void send_packet_run(const char* ip)
 {
-    printf("CLIENT THREAD\n");
+    printf("UDP - SEND PACKET\n");
 
     Platform::SocketUDP socket_write;
     socket_write.createFD(false, true, 1);
@@ -56,10 +56,9 @@ void client_thread()
     socket_write.close();
 }
 
-void server_thread()
+void receive_packet_run()
 {
-
-    printf("SERVER THREAD\n");
+    printf("UDP - RECEIVE PACKET\n");
 
     Platform::SocketUDP socket_server;
     socket_server.createFD(true, true, 1);
@@ -115,23 +114,23 @@ int main(int argc, char *argv[])
         //ITK_ABORT(true, "forced app finishing.\n");
         Platform::Thread::getMainThread()->interrupt(); });
 
-    if (argc == 2 && (strcmp(argv[1], "client") == 0))
+    if (argc == 3 && (strcmp(argv[1], "send-packet") == 0))
     {
-        client_thread();
+        send_packet_run(argv[2]);
     }
-    else if (argc == 2 && (strcmp(argv[1], "server") == 0))
+    else if (argc == 2 && (strcmp(argv[1], "wait-packet") == 0))
     {
-        server_thread();
+        receive_packet_run();
     }
     else
     {
         printf("Examples: \n"
                "\n"
-               "# start client UDP socket:\n"
-               "./socket-udp client\n"
+               "# start UDP send-packet:\n"
+               "./socket-udp send-packet <IP>\n"
                "\n"
-               "# start server UDP socket:\n"
-               "./socket-udp server\n"
+               "# start UDP wait-packet:\n"
+               "./socket-udp wait-packet\n"
                "\n");
     }
 
