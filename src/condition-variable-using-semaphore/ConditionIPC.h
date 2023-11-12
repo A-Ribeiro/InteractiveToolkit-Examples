@@ -6,7 +6,7 @@ namespace Platform
     {
         namespace Internal
         {
-            const int CONDITION_IPC_MAX_WAITS = 2;
+            const int CONDITION_IPC_MAX_WAITS = 8;
 
             struct ConditionIPC_SharedBuffer
             {
