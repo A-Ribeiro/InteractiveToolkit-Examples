@@ -116,13 +116,9 @@ int main(int argc, char *argv[])
         Platform::Thread::getMainThread()->interrupt(); });
 
     if (argc == 3 && (strcmp(argv[1], "send-packet") == 0))
-    {
         send_packet_run(argv[2]);
-    }
     else if (argc == 2 && (strcmp(argv[1], "wait-packet") == 0))
-    {
         receive_packet_run();
-    }
     else
     {
         printf("Examples: \n"
