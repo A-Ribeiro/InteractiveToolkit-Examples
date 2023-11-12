@@ -4,9 +4,6 @@
 
 using namespace ITKCommon;
 
-#include "Condition.h"
-#include "ConditionIPC.h"
-
 void single_app_condition_test()
 {
     int count = 5;
