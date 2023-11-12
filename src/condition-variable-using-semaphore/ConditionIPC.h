@@ -6,7 +6,7 @@ namespace Platform
     {
         namespace Internal
         {
-            const int CONDITION_IPC_MAX_WAITS = 8;
+            const int CONDITION_IPC_MAX_WAITS = 2;
 
             struct ConditionIPC_SharedBuffer
             {
@@ -112,6 +112,16 @@ namespace Platform
                     // }
                 }
 
+                bool inUse(int semaphore_index) {
+                    for (int i = 0; i < buffer_ptr->released_count; i++)
+                        if (buffer_ptr->released_list[i] == semaphore_index)
+                            return true;
+                    for (int i = 0; i < buffer_ptr->notifiable_count; i++)
+                        if (buffer_ptr->notifiable_list[i] == semaphore_index)
+                            return true;
+                    return false;
+                }
+
                 int getNextSemaphore(SemaphoreIPC *semaphore_to_select)
                 {
                     AutoLock lk(&mtx);
@@ -121,11 +131,15 @@ namespace Platform
                     if (buffer_ptr->notifiable_count >= CONDITION_IPC_MAX_WAITS)
                     {
                         bufferIPC.unlock();
-                        ITK_ABORT(true, "[ConditionIPC] Max waits reached: %i\n", buffer_ptr->notifiable_count);
+                        ITK_ABORT(true, "ConditionIPC - Max waits reached: %i", buffer_ptr->notifiable_count);
                     }
 
                     int next_to_return = buffer_ptr->circular_count;
-                    buffer_ptr->circular_count = (buffer_ptr->circular_count + 1) % CONDITION_IPC_MAX_WAITS;
+                    while (inUse(next_to_return))
+                        next_to_return = (next_to_return + 1) % CONDITION_IPC_MAX_WAITS;
+
+                    //buffer_ptr->circular_count = (buffer_ptr->circular_count + 1) % CONDITION_IPC_MAX_WAITS;
+                    buffer_ptr->circular_count = (next_to_return + 1) % CONDITION_IPC_MAX_WAITS;
 
                     // add to notifiable list
                     buffer_ptr->notifiable_list[buffer_ptr->notifiable_count] = next_to_return;
@@ -142,7 +156,7 @@ namespace Platform
                     return next_to_return;
                 }
 
-                void releaseSemaphore(int semaphore_index, bool *signaled)
+                void releaseSemaphore(int semaphore_index, bool *signaled, bool force_notify_to_another_process)
                 {
                     AutoLock lk(&mtx);
 
@@ -180,6 +194,43 @@ namespace Platform
                             //sprintf(buffer_ptr->selected_semaphore_name, "");
                             buffer_ptr->selected_semaphore_name[0] = 0;
                         }
+                    } else if(force_notify_to_another_process) {
+
+                        // forward notify to another process
+
+                        if (buffer_ptr->notifiable_count == 0)
+                        {
+                            //sprintf(buffer_ptr->selected_semaphore_name, "");
+                            buffer_ptr->selected_semaphore_name[0] = 0;
+                            //selectedSemaphore->release();
+                            bufferIPC.unlock();
+                            return;
+                        }
+
+                        // notify one
+                        {
+                            int sem_to_notify = buffer_ptr->notifiable_list[0];
+
+                            for (int i = 0; i < buffer_ptr->notifiable_count - 1; i++)
+                                buffer_ptr->notifiable_list[i] = buffer_ptr->notifiable_list[i + 1];
+                            buffer_ptr->notifiable_count--;
+
+                            buffer_ptr->released_list[buffer_ptr->released_count] = sem_to_notify;
+                            buffer_ptr->released_count++;
+
+                            semaphoresIPC[sem_to_notify]->release();
+                        }
+
+                        if (buffer_ptr->notifiable_count == 0)
+                        {
+                            //sprintf(buffer_ptr->selected_semaphore_name, "");
+                            buffer_ptr->selected_semaphore_name[0] = 0;
+                            //selectedSemaphore->release();
+                            bufferIPC.unlock();
+                            return;
+                        }
+
+
                     }
 
                     bufferIPC.unlock();
@@ -341,12 +392,15 @@ namespace Platform
                 {
                     if (!signaled)
                         controller.semaphoresIPC[this_semaphore]->release();
+
+                    controller.releaseSemaphore(this_semaphore, &signaled, true);
+
                     if (_signaled != NULL)
                         *_signaled = true;
                     return;
                 }
 
-                controller.releaseSemaphore(this_semaphore, &signaled);
+                controller.releaseSemaphore(this_semaphore, &signaled, false);
 
                 if (_signaled != NULL)
                     *_signaled = signaled;
@@ -366,12 +420,15 @@ namespace Platform
                 {
                     if (!signaled)
                         controller.semaphoresIPC[this_semaphore]->release();
+
+                    controller.releaseSemaphore(this_semaphore, &signaled, true);
+
                     if (_signaled != NULL)
                         *_signaled = true;
                     return;
                 }
 
-                controller.releaseSemaphore(this_semaphore, &signaled);
+                controller.releaseSemaphore(this_semaphore, &signaled, false);
 
                 if (_signaled != NULL)
                     *_signaled = signaled;
