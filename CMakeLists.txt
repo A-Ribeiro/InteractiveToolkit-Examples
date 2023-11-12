@@ -117,4 +117,6 @@ add_subdirectory(src/socket-tcp)
 
 add_subdirectory(src/sorting-parallel)
 
+add_subdirectory(src/condition-variable-using-semaphore)
+
 
