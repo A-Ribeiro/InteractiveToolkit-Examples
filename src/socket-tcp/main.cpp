@@ -132,7 +132,7 @@ void start_server(bool blocking = true)
             socket->setNoDelay(true);
 
             char client_str[32];
-            sprintf(client_str, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));
+            snprintf(client_str, 32, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));
 
             char initial_string[16] = {0};
             uint32_t read_feedback;
@@ -149,7 +149,7 @@ void start_server(bool blocking = true)
 
             char response[64];
             uint32_t write_feedback;
-            sprintf(response, "Your IP is: %s", client_str);
+            snprintf(response, 64, "Your IP is: %s", client_str);
 
             socket->write_buffer(
                 (uint8_t*)response,
