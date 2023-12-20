@@ -71,6 +71,7 @@ void ipc_wait()
         cond_cv.wait(&mutex_sem, &signaled);
         if (signaled)
         {
+            lock.cancelAutoRelease();
             printf("signaled\n");
             return;
         }
