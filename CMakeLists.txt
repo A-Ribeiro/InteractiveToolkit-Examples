@@ -21,6 +21,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include(cmake_tools.cmake)
 #include(cmake_include.cmake)
 
+# reset global variables
+unset (CMAKE_MODULE_PATH CACHE)
+unset (CMAKE_PREFIX_PATH CACHE)
+
 # create CMAKE_BUILD_TYPE for non-windows platform
 if( NOT WIN32 AND NOT CMAKE_BUILD_TYPE )
     set( CMAKE_BUILD_TYPE Release CACHE STRING
@@ -106,17 +110,19 @@ add_subdirectory(src/pattern-match)
 add_subdirectory(src/property)
 add_subdirectory(src/random)
 add_subdirectory(src/sorting)
-
 add_subdirectory(src/ipc-queue)
 add_subdirectory(src/ipc-shared-buffer)
 add_subdirectory(src/platform-process)
 add_subdirectory(src/platform-thread-queue)
-
 add_subdirectory(src/socket-udp)
 add_subdirectory(src/socket-tcp)
-
 add_subdirectory(src/sorting-parallel)
-
 add_subdirectory(src/condition-variable-using-semaphore)
 
+# new io testing code
+
+add_subdirectory(libs/InteractiveToolkit-Extension "${CMAKE_BINARY_DIR}/lib/InteractiveToolkit-Extension")
+
+add_subdirectory(src/extension-images)
+add_subdirectory(src/extension-writing-reading-data)
 

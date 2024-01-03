@@ -5,6 +5,20 @@
 #
 # John 3:16
 
+macro ( tool_make_global _var )
+    set ( ${_var} ${${_var}} CACHE INTERNAL "hide this!" FORCE )
+endmacro( )
+
+macro ( tool_append_if_not_exists_and_make_global _var _value )
+    foreach(entry IN ITEMS ${${_var}})
+        if("${entry}" STREQUAL "${_value}")
+            return()
+        endif()
+    endforeach()
+    set(${_var} ${${_var}} "${_value}")
+    tool_make_global(${_var})
+endmacro( )
+
 # automatically setup IDE source group. Useful for VSStudio
 macro(define_source_group )
     foreach(entry IN ITEMS ${ARGN})
