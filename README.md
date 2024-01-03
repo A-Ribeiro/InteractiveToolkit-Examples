@@ -5,7 +5,9 @@ but may have eternal life.
   \
 John 3:16
 
-Use examples of the [https://github.com/A-Ribeiro/InteractiveToolkit](https://github.com/A-Ribeiro/InteractiveToolkit) library.
+Use examples of the libraries:
+ - [https://github.com/A-Ribeiro/InteractiveToolkit](https://github.com/A-Ribeiro/InteractiveToolkit)
+ - [https://github.com/A-Ribeiro/InteractiveToolkit-Extension](https://github.com/A-Ribeiro/InteractiveToolkit-Extension)
 
 ## How to Clone?
 
@@ -43,9 +45,17 @@ All binaries will be generated at ```InteractiveToolkit-Examples/build/bin``` fo
 
  - **src/callback-handling**: std::bind and std::function alternative with easier assignment and comparison for functions, methods and lambdas.
 
+ - **src/condition-variable-using-semaphore**: SHM(Shared Objects) condition variable logic implemented with semaphores.
+ 
  - **src/ease-core**: Several damping animation equations.
 
  - **src/event-handling**: Event treatment with support to subscribe several listeners to one event controller(dispatcher). Can be used with functions, methods and lambdas.
+
+ - **src/extension-images**: Example of writing PNG and JPG images.
+
+ - **src/extension-writing-reading-data**: Example of writing and reading binary data.
+
+ - **src/find-rsqrt-parameters**: Find coeficients of rqsrt optimized implementation.
 
  - **src/ipc-queue**: Example of creating shared memory objects (shm) using the memory area as a queue that transfers bytes through compatible processes.
 
