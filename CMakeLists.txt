@@ -26,7 +26,7 @@ unset (CMAKE_MODULE_PATH CACHE)
 unset (CMAKE_PREFIX_PATH CACHE)
 
 # create CMAKE_BUILD_TYPE for non-windows platform
-if( NOT WIN32 AND NOT CMAKE_BUILD_TYPE )
+if( NOT CMAKE_BUILD_TYPE OR (NOT WIN32 OR CMAKE_COMPILER_IS_GNUCXX) )
     set( CMAKE_BUILD_TYPE Release CACHE STRING
             "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
             FORCE )
@@ -39,11 +39,12 @@ if(WIN32)
     # Windows
     #
     if(CMAKE_COMPILER_IS_GNUCXX)
-        create_missing_cmake_build_type()
+
         if (CMAKE_BUILD_TYPE STREQUAL Release)
             add_definitions(-DNDEBUG)
             add_compile_options(-O3 -fno-strict-aliasing)
         endif()
+
     elseif(MSVC)
         # change the multithread debug DLL to multithread debug static compilation
         # avoid link with another VS DLL...
