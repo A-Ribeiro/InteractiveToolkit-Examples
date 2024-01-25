@@ -26,7 +26,7 @@ unset (CMAKE_MODULE_PATH CACHE)
 unset (CMAKE_PREFIX_PATH CACHE)
 
 # create CMAKE_BUILD_TYPE for non-windows platform
-if( NOT CMAKE_BUILD_TYPE OR (NOT WIN32 OR CMAKE_COMPILER_IS_GNUCXX) )
+if( NOT CMAKE_BUILD_TYPE AND (NOT WIN32 OR CMAKE_COMPILER_IS_GNUCXX) )
     set( CMAKE_BUILD_TYPE Release CACHE STRING
             "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
             FORCE )
