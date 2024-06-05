@@ -26,6 +26,12 @@ int main(int argc, char *argv[])
 
     ExampleClass ExampleClassInstance;
 
+    auto callback = Callback<void(int)>(
+        // force functor to be possible to remove it
+        (void (*)(int))[](int value) {
+            printf("    [Callback] current value: %i\n", value);
+        });
+    OnEventExample.add(callback);
     OnEventExample.add(OnFunctionCall);
     OnEventExample.add(&ExampleClass::OnMethodCall, &ExampleClassInstance);
     OnEventExample.add([](int value)
@@ -42,6 +48,11 @@ int main(int argc, char *argv[])
 
     printf("(-) REMOVING OnFunctionCall\n");
     OnEventExample.remove(OnFunctionCall);
+    printf("CALLING with count: %i\n", count);
+    OnEventExample(count++);
+
+    printf("(-) REMOVING Callback\n");
+    OnEventExample.remove(callback);
     printf("CALLING with count: %i\n", count);
     OnEventExample(count++);
 

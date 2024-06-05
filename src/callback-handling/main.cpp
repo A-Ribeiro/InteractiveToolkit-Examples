@@ -46,9 +46,23 @@ int main(int argc, char *argv[])
         printf("callback is not null (Cannot compare lambda functions)\n");
     callback(count++);
 
+    auto std_function = callback.toFunction();
+    printf("Casting callback to a std::function\n");
+    std_function(count++);
+
     callback = nullptr;
     if (callback == nullptr)
         printf("callback is null\n");
+
+    {
+        printf("Event as Callback\n");
+
+        Event<void(int)> OnEventExample;
+        OnEventExample.add([](int value)
+                    { printf("    [Lambda] current value: %i\n", value); });
+        callback = OnEventExample;
+        callback(count++);
+    }
     
     return 0;
 }
