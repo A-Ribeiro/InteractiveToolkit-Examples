@@ -24,10 +24,10 @@ int main(int argc, char *argv[])
         advWriter.write<std::string>("string test");
         std::vector<float> numbs = {8, 9, 10};
         advWriter.write<std::vector<float>>(numbs);
-        std::map<std::string, uint8_t> map;
+        std::unordered_map<std::string, uint8_t> map;
         map["key1"] = 1;
         map["key2"] = 2;
-        advWriter.write<std::map<std::string, uint8_t>>(map);
+        advWriter.write<std::unordered_map<std::string, uint8_t>>(map);
         advWriter.write<int64_t>(-98765);
         // advWriter.writeToFile("write_test.bin");
         printf("will write\n");
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
         auto _b2 = advReader.read<bool>();
         auto _str = advReader.read<std::string>();
         auto _vec_f = advReader.read<std::vector<float>>();
-        auto _map_str_uint8 = advReader.read<std::map<std::string, uint8_t>>();
+        auto _map_str_uint8 = advReader.read<std::unordered_map<std::string, uint8_t>>();
         auto _i64 = advReader.read<int64_t>();
 
         std::cout << vec2.x << ", " << vec2.y << std::endl;
