@@ -67,10 +67,10 @@ int main(int argc, char *argv[])
         printf("callback is ExampleSubClassVirtual::OnMethodCall\n");
     callback(count++);
 
-    callback = CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance);
-    if (callback == CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance))
-        printf("callback is ExampleSubClassVirtual::OnMethodCall2\n");
-    callback(count++);
+    // callback = CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance);
+    // if (callback == CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance))
+    //     printf("callback is ExampleSubClassVirtual::OnMethodCall2\n");
+    // callback(count++);
 
     callback = [](int value)
     { printf("    [Lambda] current value: %i\n", value); };
