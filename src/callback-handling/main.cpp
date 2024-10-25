@@ -12,9 +12,30 @@ void OnFunctionCall(int value)
 class ExampleClass : public HandleCallback
 {
 public:
-    void OnMethodCall(int value)
+    virtual void OnMethodCall(int value)
     {
         printf("    [ExampleClass::OnMethodCall] current value: %i\n", value);
+    }
+};
+
+
+class ExampleSubClassVirtual : virtual public ExampleClass
+{
+public:
+    void OnMethodCall(int value)
+    {
+        printf("    [ExampleSubClassVirtual::OnMethodCall] current value: %i\n", value);
+    }
+
+
+    void OnMethodCall2(int value)
+    {
+        printf("    [ExampleSubClassVirtual::OnMethodCall2] current value: %i\n", value);
+    }
+
+    void OnMethodCall3(int value)
+    {
+        __asm__("nop"); 
     }
 };
 
@@ -26,6 +47,7 @@ int main(int argc, char *argv[])
 
     Callback<void(int)> callback;
     ExampleClass ExampleClassInstance;
+    ExampleSubClassVirtual ExampleSubClassVirtualInstance;
 
     if (callback == nullptr)
         printf("callback is null\n");
@@ -38,6 +60,16 @@ int main(int argc, char *argv[])
     callback = CallbackWrapper(&ExampleClass::OnMethodCall, &ExampleClassInstance);
     if (callback == CallbackWrapper(&ExampleClass::OnMethodCall, &ExampleClassInstance))
         printf("callback is ExampleClass::OnMethodCall\n");
+    callback(count++);
+
+    callback = CallbackWrapper(&ExampleClass::OnMethodCall, &ExampleSubClassVirtualInstance);
+    if (callback == CallbackWrapper(&ExampleClass::OnMethodCall, &ExampleSubClassVirtualInstance))
+        printf("callback is ExampleSubClassVirtual::OnMethodCall\n");
+    callback(count++);
+
+    callback = CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance);
+    if (callback == CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance))
+        printf("callback is ExampleSubClassVirtual::OnMethodCall2\n");
     callback(count++);
 
     callback = [](int value)
@@ -63,6 +95,17 @@ int main(int argc, char *argv[])
         callback = OnEventExample;
         callback(count++);
     }
+
+    // callback = CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall3, &ExampleSubClassVirtualInstance);
+
+    // Platform::Time timer;
+    // timer.update();
+    // for(int64_t i = 0; i< INT64_C(99999999); i++){
+    //     callback(i);
+    // }
+    // timer.update();
+
+    // std::cout << "elapsed: " << timer.deltaTimeMicro << "us\n" << std::endl;
     
     return 0;
 }
