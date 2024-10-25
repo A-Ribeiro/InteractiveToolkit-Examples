@@ -34,7 +34,7 @@ cd InteractiveToolkit-Examples/
 mkdir build
 cd build
 cmake ..
-make -j
+make -j`nproc`
 ```
 
 All binaries will be generated at ```InteractiveToolkit-Examples/build/bin``` folder.
