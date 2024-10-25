@@ -34,7 +34,9 @@ public:
 
     void OnMethodCall3(int value)
     {
-        __asm__("nop"); 
+#if defined(__linux__)
+        __asm__("nop");
+#endif
     }
 };
 
