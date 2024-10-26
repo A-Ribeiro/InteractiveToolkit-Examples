@@ -18,7 +18,6 @@ public:
     }
 };
 
-
 class ExampleSubClassVirtual : virtual public ExampleClass
 {
 public:
@@ -26,7 +25,6 @@ public:
     {
         printf("    [ExampleSubClassVirtual::OnMethodCall] current value: %i\n", value);
     }
-
 
     void OnMethodCall2(int value)
     {
@@ -36,7 +34,7 @@ public:
     void OnMethodCall3(int value)
     {
 #if defined(__linux__)
-        __asm__("nop"); 
+        __asm__("nop");
 #endif
     }
 };
@@ -69,10 +67,10 @@ int main(int argc, char *argv[])
         printf("callback is ExampleSubClassVirtual::OnMethodCall\n");
     callback(count++);
 
-    // callback = CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance);
-    // if (callback == CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance))
-    //     printf("callback is ExampleSubClassVirtual::OnMethodCall2\n");
-    // callback(count++);
+    callback = CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance);
+    if (callback == CallbackWrapper(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance))
+        printf("callback is ExampleSubClassVirtual::OnMethodCall2\n");
+    callback(count++);
 
     callback = [](int value)
     { printf("    [Lambda] current value: %i\n", value); };
@@ -93,7 +91,7 @@ int main(int argc, char *argv[])
 
         Event<void(int)> OnEventExample;
         OnEventExample.add([](int value)
-                    { printf("    [Lambda] current value: %i\n", value); });
+                           { printf("    [Lambda] current value: %i\n", value); });
         callback = OnEventExample;
         callback(count++);
     }
@@ -108,6 +106,6 @@ int main(int argc, char *argv[])
     // timer.update();
 
     // std::cout << "elapsed: " << timer.deltaTimeMicro << "us\n" << std::endl;
-    
+
     return 0;
 }

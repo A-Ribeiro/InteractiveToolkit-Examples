@@ -26,7 +26,6 @@ public:
         printf("    [ExampleSubClassVirtual::OnMethodCall] current value: %i\n", value);
     }
 
-
     void OnMethodCall2(int value)
     {
         printf("    [ExampleSubClassVirtual::OnMethodCall2] current value: %i\n", value);
@@ -49,7 +48,6 @@ int main(int argc, char *argv[])
     ExampleClass ExampleClassInstance;
     ExampleSubClassVirtual ExampleSubClassVirtualInstance;
 
-
     auto callback = Callback<void(int)>(
         // force functor to be possible to remove it
         (void (*)(int))[](int value) {
@@ -59,7 +57,7 @@ int main(int argc, char *argv[])
     OnEventExample.add(OnFunctionCall);
     OnEventExample.add(&ExampleClass::OnMethodCall, &ExampleClassInstance);
     OnEventExample.add(&ExampleClass::OnMethodCall, &ExampleSubClassVirtualInstance);
-    // OnEventExample.add(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance);
+    OnEventExample.add(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance);
 
     OnEventExample.add([](int value)
                        { printf("    [Lambda] current value: %i\n", value); });
@@ -78,10 +76,10 @@ int main(int argc, char *argv[])
     printf("CALLING with count: %i\n", count);
     OnEventExample(count++);
 
-    // printf("(-) REMOVING ExampleSubClassVirtual::OnMethodCall2\n");
-    // OnEventExample.remove(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance);
-    // printf("CALLING with count: %i\n", count);
-    // OnEventExample(count++);
+    printf("(-) REMOVING ExampleSubClassVirtual::OnMethodCall2\n");
+    OnEventExample.remove(&ExampleSubClassVirtual::OnMethodCall2, &ExampleSubClassVirtualInstance);
+    printf("CALLING with count: %i\n", count);
+    OnEventExample(count++);
 
     printf("(-) REMOVING OnFunctionCall\n");
     OnEventExample.remove(OnFunctionCall);
