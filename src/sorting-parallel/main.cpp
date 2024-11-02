@@ -36,18 +36,18 @@ int main(int argc, char *argv[])
     printf("[Single-Thread Sorting]\n");
 
     // create index array
-    std::vector<SortIndexu> ref_array(rnd_points.size());
+    std::vector<SortIndexu64> ref_array(rnd_points.size());
     for (uint32_t i=0; i < (uint32_t)ref_array.size(); i++)
     {
         ref_array[i].index = i;
-        ref_array[i].toSort = SortToolu::floatToInt(rnd_points[i].distance);
+        ref_array[i].toSort = SortToolu64::floatToInt(rnd_points[i].distance);
     }
 
     Platform::Time t;
 
     // sort O(n)
     t.update();
-    RadixCountingSortu::sortIndex(ref_array.data(), (uint32_t)ref_array.size());
+    RadixCountingSortu64::sortIndex(ref_array.data(), (uint32_t)ref_array.size());
     t.update();
 
     printf("    Time: %f sec\n", t.deltaTime);
@@ -58,11 +58,11 @@ int main(int argc, char *argv[])
     for (uint32_t i=0; i < (uint32_t)ref_array.size(); i++)
     {
         ref_array[i].index = i;
-        ref_array[i].toSort = SortToolu::floatToInt(rnd_points[i].distance);
+        ref_array[i].toSort = SortToolu64::floatToInt(rnd_points[i].distance);
     }
 
     t.update();
-    ParallelRadixCountingSortu::sortIndex( ref_array.data(), ref_array.size(), &threadPool);
+    ParallelRadixCountingSortu64::sortIndex( ref_array.data(), ref_array.size(), &threadPool);
     t.update();
 
     printf("    Time: %f sec\n", t.deltaTime);
