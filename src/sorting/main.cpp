@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
             pt.distance *= -1;
         printf(" x: %.3f y: %.3f dst: %.3f\n", pt.pos.x, pt.pos.y, pt.distance);
     }
+    rnd_points[0].distance = 0.460474f;
     printf("\n");
 
     //
