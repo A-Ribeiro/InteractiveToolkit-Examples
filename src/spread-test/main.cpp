@@ -59,23 +59,61 @@ int main(int argc, char *argv[])
         }
     }
 
+    int cpus = Platform::Thread::QueryNumberOfSystemThreads();
+    Platform::ThreadPool pool(cpus);
+
     {
-        printf("\nUINT64_MAX\n\n");
-        for (uint64_t i = 0; i < UINT64_MAX; i++)
+        struct _chunk_task
         {
-            uint64_t v = SortToolu64::spread(0, UINT64_MAX, i);
-            if (v != i)
+            uint64_t start;
+            uint64_t end;
+        };
+
+        Platform::ObjectQueue<_chunk_task> tasks;
+        Platform::Mutex mtx;
+        int count = 0;
+
+        printf("\nUINT64_MAX\n\n");
+        uint64_t i = 0;
+        while (i < UINT64_MAX)
+        {
+            uint64_t next_i = i + 0xffffffff;
+            uint64_t i_to_set = (next_i < i) ? UINT64_MAX : next_i;
+
             {
-                printf("error at i=%" PRIu64 " v=%" PRIu64 "\n", i, v);
-                return 1;
+                Platform::AutoLock _lock(&mtx);
+                count++;
             }
-            if (MathCore::OP<uint64_t>::is_power_of_two(i))
-            {
-                printf("i=%.16" PRIx64 " v=%.16" PRIx64 "\n", i, v);
-            }
+            tasks.enqueue(_chunk_task{i, i_to_set});
+            pool.postTask([&]()
+                          {
+                              auto task = tasks.dequeue(nullptr, true);
+                              for (uint64_t i = task.start; i < task.end; i++)
+                              {
+                                  uint64_t v = SortToolu64::spread(0, UINT64_MAX, i);
+                                  if (v != i)
+                                  {
+                                      printf("error at i=%" PRIu64 " v=%" PRIu64 "\n", i, v);
+                                      exit(1);
+                                  }
+                                  if (MathCore::OP<uint64_t>::is_power_of_two(i))
+                                      printf("i=%.16" PRIx64 " v=%.16" PRIx64 "\n", i, v);
+                              }
+                              {
+                                  Platform::AutoLock _lock(&mtx);
+                                  count--;
+                              } });
+
+            while (tasks.size() > cpus * 10)
+                Platform::Sleep::millis(1);
+
+            i = i_to_set;
         }
 
-        uint64_t i = UINT64_MAX;
+        while (count > 0)
+            Platform::Sleep::millis(1);
+
+        i = UINT64_MAX;
         uint64_t v = SortToolu64::spread(0, UINT64_MAX, i);
         if (v != i)
         {
@@ -85,22 +123,57 @@ int main(int argc, char *argv[])
     }
 
     {
-        printf("\nINT64_MIN - INT64_MAX\n\n");
-        for (int64_t i = INT64_MIN; i < INT64_MAX; i++)
+        struct _chunk_task
         {
-            int64_t v = SortTooli64::spread(INT64_MIN, INT64_MAX, i);
-            if (v != i)
+            int64_t start;
+            int64_t end;
+        };
+
+        Platform::ObjectQueue<_chunk_task> tasks;
+        Platform::Mutex mtx;
+        int count = 0;
+
+        printf("\nINT64_MIN - INT64_MAX\n\n");
+        int64_t i = INT64_MIN;
+        while (i < INT64_MAX)
+        {
+            int64_t next_i = i + 0xffffffff;
+            int64_t i_to_set = (next_i < i) ? INT64_MAX : next_i;
+
             {
-                printf("error at i=%" PRIi64 " v=%" PRIi64 "\n", i, v);
-                return 1;
+                Platform::AutoLock _lock(&mtx);
+                count++;
             }
-            if (MathCore::OP<int64_t>::is_power_of_two(i))
-            {
-                printf("i=%.16" PRIx64 " v=%.16" PRIx64 "\n", i, v);
-            }
+            tasks.enqueue(_chunk_task{i, i_to_set});
+            pool.postTask([&]()
+                          {
+                              auto task = tasks.dequeue(nullptr, true);
+                              for (int64_t i = task.start; i < task.end; i++)
+                              {
+                                  int64_t v = SortTooli64::spread(INT64_MIN, INT64_MAX, i);
+                                  if (v != i)
+                                  {
+                                      printf("error at i=%" PRIi64 " v=%" PRIi64 "\n", i, v);
+                                      exit(1);
+                                  }
+                                  if (MathCore::OP<int64_t>::is_power_of_two(i))
+                                      printf("i=%.16" PRIx64 " v=%.16" PRIx64 "\n", i, v);
+                              }
+                              {
+                                  Platform::AutoLock _lock(&mtx);
+                                  count--;
+                              } });
+
+            while (tasks.size() > cpus * 10)
+                Platform::Sleep::millis(1);
+
+            i = i_to_set;
         }
 
-        int64_t i = INT64_MAX;
+        while (count > 0)
+            Platform::Sleep::millis(1);
+
+        i = INT64_MAX;
         int64_t v = SortTooli64::spread(INT64_MIN, INT64_MAX, i);
         if (v != i)
         {
