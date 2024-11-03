@@ -41,13 +41,26 @@ int main(int argc, char *argv[])
 
     printf("checking number conversion:\n");
 
+    int64_t min = INT64_MAX;
+    int64_t max = INT64_MIN;
+
     for (uint64_t i=0; i < (uint64_t)ref_array.size(); i++)
     {
         ref_array[i].index = (uint32_t)i;
         ref_array[i].toSort = SortTooli64::doubleToInt(rnd_points[i].distance);
 
+        min = MathCore::OP<int64_t>::minimum(min, ref_array[i].toSort);
+        max = MathCore::OP<int64_t>::maximum(max, ref_array[i].toSort);
+
         printf("%.6f -> 0x%.16" PRIx64 " -> %.6f\n", rnd_points[i].distance, ref_array[i].toSort, SortTooli64::intToDouble(ref_array[i].toSort));
     }
+
+    printf("\n SPREAD => min: %" PRIi64 " max: %" PRIi64 "\n\n", min, max);
+
+    // Spread facilitates if you have implemented 
+    // static task distribution among all available UINT64_MAX range.
+    for(auto& item: ref_array)
+        item.toSort = SortTooli64::spread(min, max, item.toSort);
 
     // sort O(n)
     RadixCountingSorti64::sortIndex(ref_array.data(), (uint32_t)ref_array.size());
