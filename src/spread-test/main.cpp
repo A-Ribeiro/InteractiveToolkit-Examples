@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     }
 
     int cpus = Platform::Thread::QueryNumberOfSystemThreads();
-    Platform::ThreadPool pool(cpus);
+    Platform::ThreadPool pool(cpus-1);
 
     {
         struct _chunk_task
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
                                   count--;
                               } });
 
-            while (tasks.size() > cpus * 10)
+            while ((int)tasks.size() > cpus * 10)
                 Platform::Sleep::millis(1);
 
             i = i_to_set;
@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
                                   count--;
                               } });
 
-            while (tasks.size() > cpus * 10)
+            while ((int)tasks.size() > cpus * 10)
                 Platform::Sleep::millis(1);
 
             i = i_to_set;

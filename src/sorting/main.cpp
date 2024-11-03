@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 
     for (uint64_t i=0; i < (uint64_t)ref_array.size(); i++)
     {
-        ref_array[i].index = i;
+        ref_array[i].index = (uint32_t)i;
         ref_array[i].toSort = SortTooli64::doubleToInt(rnd_points[i].distance);
 
         printf("%.6f -> 0x%.16" PRIx64 " -> %.6f\n", rnd_points[i].distance, ref_array[i].toSort, SortTooli64::intToDouble(ref_array[i].toSort));
