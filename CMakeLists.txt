@@ -120,6 +120,7 @@ add_subdirectory(src/socket-udp)
 add_subdirectory(src/socket-tcp)
 add_subdirectory(src/sorting-parallel)
 add_subdirectory(src/condition-variable-using-semaphore)
+add_subdirectory(src/system-available-memory)
 
 # new io testing code
 
