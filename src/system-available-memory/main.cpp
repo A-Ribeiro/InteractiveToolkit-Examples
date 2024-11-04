@@ -66,7 +66,10 @@ namespace ITKCommon
 			return 0;
 #endif
 		}
-
+	}
+	
+	namespace ByteUtils
+	{
 		static ITK_INLINE double byteToKilo(uint64_t byte) {
 			return (double)byte / 1024.0;
 		}
@@ -85,10 +88,9 @@ namespace ITKCommon
 		static ITK_INLINE double byteToExtra(uint64_t byte) {
 			return byteToGiga(byte) / 1073741824.0;
 		}
-		
+
 		static ITK_INLINE std::string byteSmartPrint(uint64_t byte) {
 			uint64_t check_zero = byte;
-			int count = 0;
 
 			check_zero >>= 10;
 			if (!check_zero)
@@ -110,14 +112,63 @@ namespace ITKCommon
 				return ITKCommon::PrintfToStdString("%.2lf PB", byteToPeta(byte));
 			return ITKCommon::PrintfToStdString("%.2lf EB", byteToExtra(byte));
 		}
+
+
+		static ITK_INLINE double bitToKilo(uint64_t byte) {
+			return (double)byte / 1000.0;
+		}
+		static ITK_INLINE double bitToMega(uint64_t byte) {
+			return (double)byte / 1000000.0;
+		}
+		static ITK_INLINE double bitToGiga(uint64_t byte) {
+			return (double)byte / 1000000000.0;
+		}
+		static ITK_INLINE double bitToTera(uint64_t byte) {
+			return bitToGiga(byte) / 1000.0;
+		}
+		static ITK_INLINE double bitToPeta(uint64_t byte) {
+			return bitToGiga(byte) / 1000000.0;
+		}
+		static ITK_INLINE double bitToExtra(uint64_t byte) {
+			return bitToGiga(byte) / 1000000000.0;
+		}
+
+		static ITK_INLINE std::string bitSmartPrint(uint64_t bit) {
+			uint64_t check_zero = bit;
+
+			check_zero /= 1000;
+			if (!check_zero)
+				return ITKCommon::PrintfToStdString("%.2lf", (double)bit);
+			check_zero /= 1000;
+			if (!check_zero)
+				return ITKCommon::PrintfToStdString("%.2lf Kb", bitToKilo(bit));
+			check_zero /= 1000;
+			if (!check_zero)
+				return ITKCommon::PrintfToStdString("%.2lf Mb", bitToMega(bit));
+			check_zero /= 1000;
+			if (!check_zero)
+				return ITKCommon::PrintfToStdString("%.2lf Gb", bitToGiga(bit));
+			check_zero /= 1000;
+			if (!check_zero)
+				return ITKCommon::PrintfToStdString("%.2lf Tb", bitToTera(bit));
+			check_zero /= 1000;
+			if (!check_zero)
+				return ITKCommon::PrintfToStdString("%.2lf Pb", bitToPeta(bit));
+			return ITKCommon::PrintfToStdString("%.2lf Eb", bitToExtra(bit));
+		}
 	}
 
 }
 
 int main(int argc, char* argv[])
 {
-	printf("Total RAM: %s\n", ITKCommon::Memory::byteSmartPrint(ITKCommon::Memory::total_ram()).c_str());
-	printf("Available RAM: %s\n", ITKCommon::Memory::byteSmartPrint(ITKCommon::Memory::available_ram()).c_str());
+	printf("Total RAM: %s\n", ITKCommon::ByteUtils::byteSmartPrint(ITKCommon::Memory::total_ram()).c_str());
+	printf("Available RAM: %s\n", ITKCommon::ByteUtils::byteSmartPrint(ITKCommon::Memory::available_ram()).c_str());
+
+	uint64_t bit_rate = 200000000;
+
+	printf("%sps\n", ITKCommon::ByteUtils::byteSmartPrint(bit_rate/8).c_str());
+	printf("%sps\n", ITKCommon::ByteUtils::bitSmartPrint(bit_rate).c_str());
 
 	return 0;
 }
