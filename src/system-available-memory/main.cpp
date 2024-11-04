@@ -49,14 +49,23 @@ namespace ITKCommon
 				return (uint64_t)si.freeram;
 			return 0;
 #elif defined(__APPLE__)
-			vm_size_t page_size;
+
+            vm_size_t vm_page_size;
+    
+            // Get page size using sysctl
+            int mib[2] = { CTL_HW, HW_PAGESIZE };
+            size_t len = sizeof(vm_page_size);
+            if (sysctl(mib, 2, &vm_page_size, &len, NULL, 0) != 0)
+                return 0;
+
 			vm_statistics vm_stats;
 			mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
+            
+            kern_return_t kr = host_statistics(mach_host_self(), HOST_VM_INFO, (host_info_t)&vm_stats, &count);
+            if (kr != KERN_SUCCESS)
+                return 0;
 
-			host_page_size(mach_host_self(), &page_size);
-			host_statistics(mach_host_self(), HOST_VM_INFO, (host_info_t)&vm_stats, &count);
-
-			vm_size_t free_memory = vm_stats.free_count * page_size;
+			vm_size_t free_memory = (vm_stats.free_count + vm_stats.inactive_count) * vm_page_size;
 			return (uint64_t)free_memory;
 #elif defined(_WIN32)
 			MEMORYSTATUSEX memStatus;
