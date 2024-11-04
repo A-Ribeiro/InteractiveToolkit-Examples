@@ -58,7 +58,7 @@ namespace ITKCommon
 			vm_size_t used_memory = (static_cast<uint64_t>(vm_stats.active_count) + 
                            static_cast<uint64_t>(vm_stats.inactive_count) +
                            static_cast<uint64_t>(vm_stats.wire_count)) * sysconf(_SC_PAGESIZE);;
-			return total_ram() - (uint64_t)free_memory;
+			return total_ram() - (uint64_t)used_memory;
 #elif defined(_WIN32)
 			MEMORYSTATUSEX memStatus;
 			memStatus.dwLength = sizeof(memStatus);
