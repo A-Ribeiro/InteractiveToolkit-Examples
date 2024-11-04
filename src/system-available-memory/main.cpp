@@ -55,9 +55,9 @@ namespace ITKCommon
             if (kr != KERN_SUCCESS)
                 return 0;
 
-			vm_size_t used_memory = (static_cast<uint64_t>(vmStats.active_count) + 
-                           static_cast<uint64_t>(vmStats.inactive_count) +
-                           static_cast<uint64_t>(vmStats.wire_count)) * sysconf(_SC_PAGESIZE);;
+			vm_size_t used_memory = (static_cast<uint64_t>(vm_stats.active_count) + 
+                           static_cast<uint64_t>(vm_stats.inactive_count) +
+                           static_cast<uint64_t>(vm_stats.wire_count)) * sysconf(_SC_PAGESIZE);;
 			return total_ram() - (uint64_t)free_memory;
 #elif defined(_WIN32)
 			MEMORYSTATUSEX memStatus;
