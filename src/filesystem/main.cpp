@@ -18,7 +18,7 @@ void list_commands()
 void list_dir(const std::string relative_dir_str)
 {
 
-#if defined(_WIN32)
+#if defined(_WIN32) && false
 
 #define GEN_RESET
 #define GEN_BRIGHT
@@ -77,7 +77,7 @@ void list_dir(const std::string relative_dir_str)
     size_t max_size = 5; // " file"
     for (auto &file : dir)
     {
-        int increase_size = 0;
+        size_t increase_size = 0;
         if (file.isLink) {
             auto link = file.readLink();
             increase_size = link.length() + 4; // " -> "
