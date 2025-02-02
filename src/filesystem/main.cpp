@@ -68,6 +68,8 @@ void list_dir(const std::string relative_dir_str)
 #define B_CYAN "\x1B[46m"
 #define B_WHITE "\x1B[47m"
 
+#define COMPOSED_ERROR "\x1B[47;31m" // B comes before F setup
+
 #endif
 
     FileSystem::Directory dir(relative_dir_str);
@@ -75,8 +77,14 @@ void list_dir(const std::string relative_dir_str)
     size_t max_size = 5; // " file"
     for (auto &file : dir)
     {
-        if (file.name.length() + 1 > max_size)
-            max_size = file.name.length() + 1;
+        int increase_size = 0;
+        if (file.isLink) {
+            auto link = file.readLink();
+            increase_size = link.length() + 4; // " -> "
+        }
+
+        if (file.name.length() + increase_size + 1 > max_size)
+            max_size = file.name.length()  + increase_size + 1;
     }
 
     max_size++;
@@ -97,13 +105,35 @@ void list_dir(const std::string relative_dir_str)
 
     for (auto &file : dir)
     {
-        if (file.isDirectory)
-            printf(GEN_BRIGHT F_GREEN " %s" GEN_RESET, file.name.c_str());
-        else
-            printf(" %s", file.name.c_str());
+        auto name_to_render = file.name;
+        if (file.isLink){
+            // broken link test
+            if (file.isDirectory || file.isFile)
+                name_to_render = name_to_render + " -> " + file.readLink();
+        }
+
+        if (file.isDirectory) {
+            if (file.isLink)
+                printf(GEN_BRIGHT F_CYAN " %s" GEN_RESET, name_to_render.c_str());
+            else
+                printf(GEN_BRIGHT F_GREEN " %s" GEN_RESET, name_to_render.c_str());
+        } else if (file.isFile) {
+            if (file.isLink)
+                printf( F_CYAN " %s" GEN_RESET, name_to_render.c_str());
+            else
+                printf(" %s", name_to_render.c_str());
+        } else {
+            // broken link case
+            if (file.isLink){
+                printf( " " F_YELLOW B_RED "%s" GEN_RESET " -> " F_YELLOW B_RED "%s" GEN_RESET, name_to_render.c_str(), file.readLink().c_str());
+                name_to_render = name_to_render + " -> " + file.readLink();
+            }
+            else 
+                printf( " " F_YELLOW B_RED "%s" GEN_RESET, name_to_render.c_str());
+        }
 
         // stats
-        size_t needed_size = max_size - file.name.length() - 1;
+        size_t needed_size = max_size - name_to_render.length() - 1;
         while (needed_size > 0)
         {
             putc(' ', stdout);
