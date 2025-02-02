@@ -121,6 +121,7 @@ add_subdirectory(src/socket-tcp)
 add_subdirectory(src/sorting-parallel)
 add_subdirectory(src/condition-variable-using-semaphore)
 add_subdirectory(src/system-available-memory)
+add_subdirectory(src/filesystem)
 
 # new io testing code
 
