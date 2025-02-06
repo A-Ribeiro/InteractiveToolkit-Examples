@@ -107,11 +107,11 @@ public:
 
         if (should_print)
         {
-            if (header)
-                printf(INIT_TTY_CMD GEN_UNDERSCORE FINISH_TTY_CMD);
-
-            if (current_column > 0)
+            if (current_column > 0) {
+                if (header)
+                    printf(INIT_TTY_CMD GEN_UNDERSCORE FINISH_TTY_CMD);
                 printf("|");
+            }            
 
             int needed_size = size_column[current_column] - txt.length();
             int needed_size_2 = needed_size >> 1;
