@@ -103,7 +103,7 @@ public:
         while (size_column.size() <= current_column)
             size_column.push_back(0);
         if (txt.length() > size_column[current_column])
-            size_column[current_column] = txt.length();
+            size_column[current_column] = (int)txt.length();
 
         if (should_print)
         {
@@ -113,7 +113,7 @@ public:
                 printf("|");
             }            
 
-            int needed_size = size_column[current_column] - txt.length();
+            int needed_size = size_column[current_column] - (int)txt.length();
             int needed_size_2 = needed_size >> 1;
 
             printf(INIT_TTY_CMD);
