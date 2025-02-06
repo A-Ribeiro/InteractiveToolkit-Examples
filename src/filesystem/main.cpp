@@ -77,8 +77,7 @@ int main(int argc, char *argv[])
     if (argc == 3 && strcmp(argv[1], "ls") == 0)
         list_dir(argv[2]);
     else
-        list_dir(".");
-        //list_commands();
+        list_commands();
 
     return 0;
 }
