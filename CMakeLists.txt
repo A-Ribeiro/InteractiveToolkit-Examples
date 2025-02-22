@@ -122,6 +122,7 @@ add_subdirectory(src/sorting-parallel)
 add_subdirectory(src/condition-variable-using-semaphore)
 add_subdirectory(src/system-available-memory)
 add_subdirectory(src/filesystem)
+add_subdirectory(src/fixed-point)
 
 # new io testing code
 
