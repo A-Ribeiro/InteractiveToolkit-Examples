@@ -1,8 +1,10 @@
-#include <InteractiveToolkit/InteractiveToolkit.h>
-#include "Fixed.h"
+//#include <InteractiveToolkit/InteractiveToolkit.h>
+#include "fixed_t.h"
+#include <stdio.h>
+
 int main(int argc, char *argv[])
 {
-	ITKCommon::Path::setWorkingPath(ITKCommon::Path::getExecutablePath(argv[0]));
+	// ITKCommon::Path::setWorkingPath(ITKCommon::Path::getExecutablePath(argv[0]));
 
 	{
 		printf(
@@ -14,9 +16,9 @@ int main(int argc, char *argv[])
 		// 16bits to the decimal part -- range: [0,65536]
 		using fixed = ufixed32_t<16>;
 
-		printf("ufixed32_t<%i>:\n", fixed::FRAC_BITS);
-		printf("  int_bits:%i [%i -> %i]\n", fixed::INT_BITS, fixed::INT_RANGE_MIN, fixed::INT_RANGE_MAX);
-		printf("  frac_bits:%i [%i -> %i]\n", fixed::FRAC_BITS, fixed::FRAC_RANGE_MIN, fixed::FRAC_RANGE_MAX);
+		printf("ufixed32_t<%li>:\n", fixed::FRAC_BITS);
+		printf("  int_bits:%li [%li -> %li]\n", fixed::INT_BITS, fixed::INT_RANGE_MIN, fixed::INT_RANGE_MAX);
+		printf("  frac_bits:%li [%li -> %li]\n", fixed::FRAC_BITS, fixed::FRAC_RANGE_MIN, fixed::FRAC_RANGE_MAX);
 
 		auto a = fixed(0, 0);
 		auto b = fixed(100, 0);
@@ -46,9 +48,9 @@ int main(int argc, char *argv[])
 		// 21bits to the decimal part -- range: [0,2097151]
 		using fixed = fixed32_t<21>;
 
-		printf("fixed32_t<%i>:\n", fixed::FRAC_BITS);
-		printf("  int_bits:%i [%i -> %i]\n", fixed::INT_BITS, fixed::INT_RANGE_MIN, fixed::INT_RANGE_MAX);
-		printf("  frac_bits:%i [%i -> %i]\n", fixed::FRAC_BITS, fixed::FRAC_RANGE_MIN, fixed::FRAC_RANGE_MAX);
+		printf("fixed32_t<%li>:\n", fixed::FRAC_BITS);
+		printf("  int_bits:%li [%li -> %li]\n", fixed::INT_BITS, fixed::INT_RANGE_MIN, fixed::INT_RANGE_MAX);
+		printf("  frac_bits:%li [%li -> %li]\n", fixed::FRAC_BITS, fixed::FRAC_RANGE_MIN, fixed::FRAC_RANGE_MAX);
 
 		auto a = fixed(-255, 0);
 		auto b = fixed(0, 0);
