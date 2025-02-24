@@ -2,6 +2,7 @@
 
 // #include <InteractiveToolkit/InteractiveToolkit.h>
 #include <InteractiveToolkit/common.h>
+#include <InteractiveToolkit/AlgorithmCore/Sorting/uint128.h>
 #include <cstdint>
 #include <type_traits>
 
@@ -27,24 +28,12 @@ struct StoreSpecType<uint32_t>
     static constexpr int SHIFT_GET_SIGN_MINUS_ONE = 30;
     static constexpr valueT FIRST_BIT_ZERO = UINT32_C(0xfffffffe);
 
-    static constexpr rangeT VALUE_TOTAL_BITS = 32;
+    static constexpr int VALUE_TOTAL_BITS = 32;
 
-    static constexpr rangeT INTEGER_PART_MIN_RANGE(rangeT bits) noexcept
-    {
-        return 0;
-    }
-    static constexpr rangeT INTEGER_PART_MAX_RANGE(rangeT bits) noexcept
-    {
-        return (1 << bits) - 1;
-    }
-    static constexpr rangeT FRACTIONAL_PART_MIN_RANGE(rangeT bits) noexcept
-    {
-        return 0;
-    }
-    static constexpr rangeT FRACTIONAL_PART_MAX_RANGE(rangeT bits) noexcept
-    {
-        return (1 << bits) - 1;
-    }
+    static constexpr rangeT INTEGER_PART_MIN_RANGE(int bits) noexcept { return 0; }
+    static constexpr rangeT INTEGER_PART_MAX_RANGE(int bits) noexcept { return (rangeT(1) << bits) - rangeT(1); }
+    static constexpr rangeT FRACTIONAL_PART_MIN_RANGE(int bits) noexcept { return 0; }
+    static constexpr rangeT FRACTIONAL_PART_MAX_RANGE(int bits) noexcept { return (rangeT(1) << bits) - rangeT(1); }
 };
 
 template <>
@@ -64,24 +53,74 @@ struct StoreSpecType<int32_t>
     static constexpr int SHIFT_GET_SIGN_MINUS_ONE = 30;
     static constexpr valueT FIRST_BIT_ZERO = INT32_C(0xfffffffe);
 
-    static constexpr rangeT VALUE_TOTAL_BITS = 32;
+    static constexpr int VALUE_TOTAL_BITS = 32;
 
-    static constexpr rangeT INTEGER_PART_MIN_RANGE(rangeT bits) noexcept
-    {
-        return -(1 << (bits - 1));
-    }
-    static constexpr rangeT INTEGER_PART_MAX_RANGE(rangeT bits) noexcept
-    {
-        return (1 << (bits - 1)) - 1;
-    }
-    static constexpr rangeT FRACTIONAL_PART_MIN_RANGE(rangeT bits) noexcept
-    {
-        return -((1 << bits) - 1);
-    }
-    static constexpr rangeT FRACTIONAL_PART_MAX_RANGE(rangeT bits) noexcept
-    {
-        return (1 << bits) - 1;
-    }
+    static constexpr rangeT INTEGER_PART_MIN_RANGE(int bits) noexcept { return -(rangeT(1) << (bits - 1)); }
+    static constexpr rangeT INTEGER_PART_MAX_RANGE(int bits) noexcept { return (rangeT(1) << (bits - 1)) - rangeT(1); }
+    static constexpr rangeT FRACTIONAL_PART_MIN_RANGE(int bits) noexcept { return -((rangeT(1) << bits) - rangeT(1)); }
+    static constexpr rangeT FRACTIONAL_PART_MAX_RANGE(int bits) noexcept { return (rangeT(1) << bits) - rangeT(1); }
+};
+
+template <>
+struct StoreSpecType<uint64_t>
+{
+    using _is_signed = std::false_type;
+
+    typedef uint64_t valueT;
+    typedef uint64_t u_valueT;
+
+    // the best int type for size and range is the int128
+    // but int64 is best supported by compilers in general.
+    // This implementation is guaranteeded to be working
+    // with the following ranges for the fractional part:
+    //     - min of 2 bits
+    //     - max of 62 bits
+    typedef uint64_t sizeT;
+    typedef int64_t rangeT;
+    typedef AlgorithmCore::uint128 mul_div_T;
+
+    static constexpr valueT SIGN_MASK = UINT64_C(0x8000000000000000);
+
+    static constexpr int SHIFT_GET_SIGN_MINUS_ONE = 62;
+    static constexpr valueT FIRST_BIT_ZERO = UINT64_C(0xfffffffffffffffe);
+
+    static constexpr int VALUE_TOTAL_BITS = 64;
+
+    static constexpr rangeT INTEGER_PART_MIN_RANGE(int bits) noexcept { return 0; }
+    static constexpr rangeT INTEGER_PART_MAX_RANGE(int bits) noexcept { return (rangeT(1) << bits) - rangeT(1); }
+    static constexpr rangeT FRACTIONAL_PART_MIN_RANGE(int bits) noexcept { return 0; }
+    static constexpr rangeT FRACTIONAL_PART_MAX_RANGE(int bits) noexcept { return (rangeT(1) << bits) - rangeT(1); }
+};
+
+template <>
+struct StoreSpecType<int64_t>
+{
+    using _is_signed = std::true_type;
+
+    typedef int64_t valueT;
+    typedef uint64_t u_valueT;
+
+    // the best int type for size and range is the int128
+    // but int64 is best supported by compilers in general.
+    // This implementation is guaranteeded to be working
+    // with the following ranges for the fractional part:
+    //     - min of 2 bits
+    //     - max of 62 bits
+    typedef uint64_t sizeT;
+    typedef int64_t rangeT;
+    typedef AlgorithmCore::uint128 mul_div_T;
+
+    static constexpr valueT SIGN_MASK = UINT64_C(0x8000000000000000);
+
+    static constexpr int SHIFT_GET_SIGN_MINUS_ONE = 62;
+    static constexpr valueT FIRST_BIT_ZERO = UINT64_C(0xfffffffffffffffe);
+
+    static constexpr int VALUE_TOTAL_BITS = 64;
+
+    static constexpr rangeT INTEGER_PART_MIN_RANGE(int bits) noexcept { return -(rangeT(1) << (bits - 1)); }
+    static constexpr rangeT INTEGER_PART_MAX_RANGE(int bits) noexcept { return (rangeT(1) << (bits - 1)) - rangeT(1); }
+    static constexpr rangeT FRACTIONAL_PART_MIN_RANGE(int bits) noexcept { return -((rangeT(1) << bits) - rangeT(1)); }
+    static constexpr rangeT FRACTIONAL_PART_MAX_RANGE(int bits) noexcept { return (rangeT(1) << bits) - rangeT(1); }
 };
 
 template <typename store_type, int frac_bits>
@@ -97,18 +136,18 @@ public:
     typedef typename StoreSpec::mul_div_T mul_div_T;
 
 private:
-        valueT value;
+    valueT value;
 
-    static const sizeT FRACTIONAL_BITS = frac_bits;
-    static const sizeT FRACTIONAL_MASK = (1 << FRACTIONAL_BITS) - 1;
-    static const sizeT FACTOR = 1 << FRACTIONAL_BITS;
+    static const int FRACTIONAL_BITS = frac_bits;
+    static const sizeT FRACTIONAL_MASK = (sizeT(1) << FRACTIONAL_BITS) - sizeT(1);
+    static const sizeT FACTOR = sizeT(1) << FRACTIONAL_BITS;
 
 public:
-    static const rangeT INT_BITS = StoreSpec::VALUE_TOTAL_BITS - FRACTIONAL_BITS;
+    static const int INT_BITS = StoreSpec::VALUE_TOTAL_BITS - FRACTIONAL_BITS;
     static const rangeT INT_RANGE_MIN = StoreSpec::INTEGER_PART_MIN_RANGE(INT_BITS);
     static const rangeT INT_RANGE_MAX = StoreSpec::INTEGER_PART_MAX_RANGE(INT_BITS);
 
-    static const rangeT FRAC_BITS = FRACTIONAL_BITS;
+    static const int FRAC_BITS = FRACTIONAL_BITS;
     static const rangeT FRAC_RANGE_MIN = StoreSpec::FRACTIONAL_PART_MIN_RANGE(FRAC_BITS);
     static const rangeT FRAC_RANGE_MAX = StoreSpec::FRACTIONAL_PART_MAX_RANGE(FRAC_BITS);
 
@@ -141,6 +180,25 @@ public:
         return fixed_t(-value);
     }
 
+    // special case for int64_t... 
+    // do the multiplication using uint128, 
+    // but considering the signal...
+    template <typename T = StoreSpec, typename std::enable_if<std::is_same<typename T::valueT, int64_t>::value, bool>::type = true>
+    fixed_t operator*(const fixed_t &other) const
+    {
+        bool value_neg = (value & StoreSpec::SIGN_MASK) != 0;
+        bool other_neg = (other.value & StoreSpec::SIGN_MASK) != 0;
+
+        mul_div_T result = mul_div_T((value_neg)?-value:value);
+        result *= mul_div_T((other_neg)?-other.value:other.value);
+        result >>= FRACTIONAL_BITS;
+
+        bool neg_result = value_neg ^ other_neg;
+
+        return fixed_t((neg_result)?-(valueT)result:(valueT)result);
+    }
+
+    template <typename T = StoreSpec, typename std::enable_if<!std::is_same<typename T::valueT, int64_t>::value, bool>::type = true>
     fixed_t operator*(const fixed_t &other) const
     {
         mul_div_T result = mul_div_T(value);
@@ -149,6 +207,25 @@ public:
         return fixed_t((valueT)result);
     }
 
+    // special case for int64_t... 
+    // do the multiplication using uint128, 
+    // but considering the signal...
+    template <typename T = StoreSpec, typename std::enable_if<std::is_same<typename T::valueT, int64_t>::value, bool>::type = true>
+    fixed_t operator/(const fixed_t &other) const
+    {
+        bool value_neg = (value & StoreSpec::SIGN_MASK) != 0;
+        bool other_neg = (other.value & StoreSpec::SIGN_MASK) != 0;
+
+        mul_div_T result = mul_div_T((value_neg)?-value:value);
+        result <<= FRACTIONAL_BITS;
+        result /= mul_div_T((other_neg)?-other.value:other.value);
+        
+        bool neg_result = value_neg ^ other_neg;
+
+        return fixed_t((neg_result)?-(valueT)result:(valueT)result);
+    }
+
+    template <typename T = StoreSpec, typename std::enable_if<!std::is_same<typename T::valueT, int64_t>::value, bool>::type = true>
     fixed_t operator/(const fixed_t &other) const
     {
         mul_div_T result = mul_div_T(value);
@@ -310,3 +387,9 @@ using ufixed32_t = fixed_t<uint32_t, frac_bits>;
 
 template <int frac_bits>
 using fixed32_t = fixed_t<int32_t, frac_bits>;
+
+template <int frac_bits>
+using ufixed64_t = fixed_t<uint64_t, frac_bits>;
+
+template <int frac_bits>
+using fixed64_t = fixed_t<int64_t, frac_bits>;
