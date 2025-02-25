@@ -1,6 +1,10 @@
-//#include <InteractiveToolkit/InteractiveToolkit.h>
+
 #include "fixed_t.h"
 #include <stdio.h>
+
+#include <InteractiveToolkit/MathCore/MathCore.h>
+
+using namespace MathCore;
 
 int main(int argc, char *argv[])
 {
@@ -74,8 +78,27 @@ int main(int argc, char *argv[])
 
 		// auto new_from_result = (result.isNegative()) ? -fixed(result.integer_part(), result.fract_part()) : fixed(result.integer_part(), result.fract_part());
 		auto new_from_result = fixed(result.signed_integer_part(), result.signed_fract_part());
-		
+
 		printf("new_from_result => %f\n", new_from_result.toFloat());
+	}
+
+	{
+		printf(
+			" ----------\n"
+			"|  TEST C  |\n"
+			" ----------\n");
+
+		// vec2 example
+		using fixed = fixed32_t<21>;
+		using vec2T = MathCore::vec2<fixed>;
+
+		auto result = vec2T( 0, 512 ) / 2 + 10 - vec2T(fixed::fromFloat(0.5f), 0);
+
+		printf("result => ( %f, %f )\n", result.x.toFloat(), result.y.toFloat());
+
+		printf("result == ( %i )\n", (result == vec2T(fixed::fromFloat(9.5f), 266))?1:0 );
+
+
 	}
 
 	return 0;
