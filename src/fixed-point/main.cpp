@@ -92,12 +92,20 @@ int main(int argc, char *argv[])
 		using fixed = fixed32_t<21>;
 		using vec2T = MathCore::vec2<fixed>;
 
-		auto result = vec2T( 0, 512 ) / 2 + 10 - vec2T(fixed::fromFloat(0.5f), 0);
+		auto print = std::function<void(const vec2T&)>([]( const vec2T&v ){
+			printf("( ");
+			for(auto item: v.array)
+				printf("%f ", item.toFloat());
+			printf(")\n");
+		});
 
-		printf("result => ( %f, %f )\n", result.x.toFloat(), result.y.toFloat());
+		auto result = (vec2T(512) >> 1) + 10 - vec2T(fixed::fromFloat(0.5f));
+		print(result);
+		result >>= 1;
+		print(result);
 
-		printf("result == ( %i )\n", (result == vec2T(fixed::fromFloat(9.5f), 266))?1:0 );
-
+		printf("result == (132.75, 132.75) => ( %i )\n", (result == vec2T(fixed::fromFloat(132.75f))) ? 1 : 0);
+		printf("result != (132.75, 132.75) => ( %i )\n", (result != vec2T(fixed::fromFloat(132.75f))) ? 1 : 0);
 
 	}
 
