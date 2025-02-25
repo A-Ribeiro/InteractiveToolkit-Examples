@@ -1,10 +1,5 @@
-
-#include "fixed_t.h"
 #include <stdio.h>
-
 #include <InteractiveToolkit/MathCore/MathCore.h>
-
-using namespace MathCore;
 
 int main(int argc, char *argv[])
 {
@@ -18,7 +13,7 @@ int main(int argc, char *argv[])
 
 		// 16bits to the integer part -- range: [0,65536]
 		// 16bits to the decimal part -- range: [0,65536]
-		using fixed = ufixed32_t<16>;
+		using fixed = MathCore::ufixed32_t<16>;
 
 		printf("ufixed32_t<%i>:\n", fixed::FRAC_BITS);
 		printf("  int_bits:%i [%" PRIi64 " -> %" PRIi64 "]\n", fixed::INT_BITS, fixed::INT_RANGE_MIN, fixed::INT_RANGE_MAX);
@@ -50,7 +45,7 @@ int main(int argc, char *argv[])
 
 		// 11bits to the integer part -- range: [-1024,1023]
 		// 21bits to the decimal part -- range: [0,2097151]
-		using fixed = fixed32_t<21>;
+		using fixed = MathCore::fixed32_t<21>;
 
 		printf("fixed32_t<%i>:\n", fixed::FRAC_BITS);
 		printf("  int_bits:%i [%" PRIi64 " -> %" PRIi64 "]\n", fixed::INT_BITS, fixed::INT_RANGE_MIN, fixed::INT_RANGE_MAX);
@@ -89,7 +84,7 @@ int main(int argc, char *argv[])
 			" ----------\n");
 
 		// vec2 example
-		using fixed = fixed32_t<21>;
+		using fixed = MathCore::fixed32_t<21>;
 		using vec2T = MathCore::vec2<fixed>;
 
 		auto print = std::function<void(const vec2T&)>([]( const vec2T&v ){
