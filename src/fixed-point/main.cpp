@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 		// 16bits to the decimal part -- range: [0,65536]
 		using fixed = ufixed32_t<16>;
 
-		printf("ufixed64_t<%i>:\n", fixed::FRAC_BITS);
+		printf("ufixed32_t<%i>:\n", fixed::FRAC_BITS);
 		printf("  int_bits:%i [%" PRIi64 " -> %" PRIi64 "]\n", fixed::INT_BITS, fixed::INT_RANGE_MIN, fixed::INT_RANGE_MAX);
 		printf("  frac_bits:%i [%" PRIi64 " -> %" PRIi64 "]\n", fixed::FRAC_BITS, fixed::FRAC_RANGE_MIN, fixed::FRAC_RANGE_MAX);
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 			// method 2: better precision for integers
 			auto result = a + (delta * fixed(i, 0)) / fixed(n_div, 0);
 
-			printf("%i => %f\n", i, result.toFloat());
+			printf("%i => %f\n", i, result.toDouble());
 		}
 	}
 
@@ -58,28 +58,28 @@ int main(int argc, char *argv[])
 
 		auto a = fixed(-255, 0);
 		auto b = fixed(0, 0);
-		const auto lrp = fixed::fromFloat(0.35f);
+		const auto lrp = fixed::fromDouble(0.35);
 
-		printf("a => %f\n", a.toFloat());
-		printf("b => %f\n", b.toFloat());
-		printf("b - a => %f\n", (b - a).toFloat());
-		printf("lrp => %f\n", lrp.toFloat());
+		printf("a => %f\n", a.toDouble());
+		printf("b => %f\n", b.toDouble());
+		printf("b - a => %f\n", (b - a).toDouble());
+		printf("lrp => %f\n", lrp.toDouble());
 
 		auto result = a + (b - a) * lrp;
-		printf("result => %f\n", result.toFloat());
+		printf("result => %f\n", result.toDouble());
 
 		// round result
-		const auto _0_5 = fixed::fromFloat(0.5f);
+		const auto _0_5 = fixed::fromDouble(0.5);
 		result = (result.isNegative()) ? (result - _0_5) : (result + _0_5);
-		printf("result => %f\n", result.toFloat());
+		printf("result => %f\n", result.toDouble());
 
 		printf("result.integer_part() => %i\n", result.signed_integer_part());
-		printf("result.fract_part() => %i -> %f\n", result.signed_fract_part(), (float)result.signed_fract_part() / (fixed::FRAC_RANGE_MAX + 1));
+		printf("result.fract_part() => %i -> %f\n", result.signed_fract_part(), (double)result.signed_fract_part() / (fixed::FRAC_RANGE_MAX + 1));
 
 		// auto new_from_result = (result.isNegative()) ? -fixed(result.integer_part(), result.fract_part()) : fixed(result.integer_part(), result.fract_part());
 		auto new_from_result = fixed(result.signed_integer_part(), result.signed_fract_part());
 
-		printf("new_from_result => %f\n", new_from_result.toFloat());
+		printf("new_from_result => %f\n", new_from_result.toDouble());
 	}
 
 	{
@@ -95,17 +95,17 @@ int main(int argc, char *argv[])
 		auto print = std::function<void(const vec2T&)>([]( const vec2T&v ){
 			printf("( ");
 			for(auto item: v.array)
-				printf("%f ", item.toFloat());
+				printf("%f ", item.toDouble());
 			printf(")\n");
 		});
 
-		auto result = (vec2T(512) >> 1) + 10 - vec2T(fixed::fromFloat(0.5f));
+		auto result = (vec2T(512) >> 1) + 10 - vec2T(fixed::fromDouble(0.5));
 		print(result);
 		result >>= 1;
 		print(result);
 
-		printf("result == (132.75, 132.75) => ( %i )\n", (result == vec2T(fixed::fromFloat(132.75f))) ? 1 : 0);
-		printf("result != (132.75, 132.75) => ( %i )\n", (result != vec2T(fixed::fromFloat(132.75f))) ? 1 : 0);
+		printf("result == (132.75, 132.75) => ( %i )\n", (result == vec2T(fixed::fromDouble(132.75))) ? 1 : 0);
+		printf("result != (132.75, 132.75) => ( %i )\n", (result != vec2T(fixed::fromDouble(132.75))) ? 1 : 0);
 
 	}
 
