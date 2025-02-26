@@ -110,8 +110,8 @@ int main(int argc, char *argv[])
 			"|  TEST D  |\n"
 			" ----------\n");
 
-		using fixed = MathCore::ufixed32_t<16>;
 		using vec4T = MathCore::vec4ufixed32<16>;
+		using fixed = vec4T::element_type;
 
 		auto print = std::function<void(const vec4T&)>([]( const vec4T&v ){
 			printf("( ");
