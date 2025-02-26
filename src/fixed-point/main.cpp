@@ -104,5 +104,36 @@ int main(int argc, char *argv[])
 
 	}
 
+	{
+		printf(
+			" ----------\n"
+			"|  TEST D  |\n"
+			" ----------\n");
+
+		using fixed = MathCore::ufixed32_t<16>;
+		using vec4T = MathCore::vec4ufixed32<16>;
+
+		auto print = std::function<void(const vec4T&)>([]( const vec4T&v ){
+			printf("( ");
+			for(auto item: v.array)
+				printf("%f ", item.toDouble());
+			printf(")\n");
+		});
+
+		auto result = vec4T(1,2,3,4);
+		printf("vec4T(1,2,3,4) ");print(result);
+		result >>= 2;
+		printf("result >>= 2 ");print(result);
+		result *= vec4T(2,4,8,16);
+		printf("result *= vec4T(2,4,8,16) ");print(result);
+		result += fixed::fromDouble(0.5);
+		printf("result += 0.5 ");print(result);
+		result = ~result;
+		printf("result = ~result ");print(result);
+		result /= vec4T(2,4,8,16);
+		printf("result /= vec4T(2,4,8,16) ");print(result);
+
+	}
+
 	return 0;
 }
