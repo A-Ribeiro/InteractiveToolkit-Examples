@@ -143,29 +143,32 @@ int main(int argc, char *argv[])
 
 		using fixed_a = MathCore::fixed32_t<21>;
 		using fixed_b = MathCore::fixed32_t<10>;
-		using fixed_c = MathCore::ufixed32_t<21>;
+		using fixed_c = MathCore::ufixed32_t<20>;
 
 		fixed_a a = 10.5f;
 		fixed_b b = 0;
 
-		printf("a %f\n", a.toDouble());
 		b = a;
+
+		printf("a %f\n", a.toDouble());
 		printf("b %f\n", b.toDouble());
 		printf("\n");
 
 		b = 50.125f;
-		printf("b %f\n", b.toDouble());
 		a = (fixed_a)b + 0.000125;
+
+		printf("b %f\n", b.toDouble());
 		printf("a %f\n", a.toDouble());
 		printf("\n");
 
 		fixed_c c;
 		a = a + (fixed_a)b;
 		c = a;
+
 		printf("c %f\n", c.toDouble());
 		printf("\n");
 
-		const fixed_c const_pi = (float)MathCore::CONSTANT<float>::PI;
+		constexpr fixed_c const_pi = (float)MathCore::CONSTANT<float>::PI;
 
 		c = const_pi;
 		printf("c(PI) %f\n", c.toDouble());
@@ -173,8 +176,19 @@ int main(int argc, char *argv[])
 
 		int32_t d = (int32_t)c;
 		printf("d %i\n", d);
+		printf("\n");
 
+		c = 0x7ff;
+		a = c;
 
+		printf("a %f\n", a.toDouble());
+		printf("c %f\n", c.toDouble());
+		
+		c = a;
+
+		printf("c %f\n", c.toDouble());
+
+		printf("\n");
 	}
 
 	return 0;
