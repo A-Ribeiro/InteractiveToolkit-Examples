@@ -48,11 +48,11 @@ int main(int argc, char *argv[])
     ExampleClass ExampleClassInstance;
     ExampleSubClassVirtual ExampleSubClassVirtualInstance;
 
-    auto callback = Callback<void(int)>(
-        // force functor to be possible to remove it
-        (void (*)(int))[](int value) {
-            printf("    [Callback] current value: %i\n", value);
-        });
+    typedef void (*fnc_type)(int);
+    // force functor to be possible to remove it
+    auto callback = Callback<void(int)>((fnc_type)[](int value) {
+        printf("    [Callback] current value: %i\n", value);
+    });
     OnEventExample.add(callback);
     OnEventExample.add(OnFunctionCall);
     OnEventExample.add(&ExampleClass::OnMethodCall, &ExampleClassInstance);
