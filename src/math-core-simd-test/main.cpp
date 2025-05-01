@@ -18,7 +18,10 @@ void print_any_vec(const T &v)
     {
         printf("        [");
         for (int c = 0; c < (int)T::cols; c++)
-            printf("%f ", v[c][r]);
+            if (v[c][r] >= 0.0f)
+                printf(" %e ", v[c][r]);
+            else
+                printf("%e ", v[c][r]);
         printf("]\n");
     }
     printf("        ");
@@ -35,7 +38,10 @@ void print_any_vec(const T &v)
 {
     printf("( ");
     for (int i = 0; i < T::array_count; i++)
-        printf("%f ", v.array[i]);
+        if (v.array[i] >= 0.0f)
+            printf(" %e ", v.array[i]);
+        else
+            printf("%e ", v.array[i]);
     printf(")");
 }
 
@@ -49,9 +55,15 @@ template <typename T,
 bool compare_any_vec(const T &a, const T &b)
 {
     bool passed = true;
-    for (int c = 0; c < (int)T::cols; c++)
-        for (int r = 0; r < (int)T::rows; r++)
-            passed = passed && (OP<float>::abs(a[c][r] - b[c][r]) < EPSILON<float>::low_precision);
+    for (int c = 0; c < (int)T::cols; c++){
+        for (int r = 0; r < (int)T::rows; r++){
+            const float &af = a[c][r];
+            const float &bf = b[c][r];
+            float tolerance_scaled = OP<float>::maximum(OP<float>::abs(af), OP<float>::abs(bf)) * EPSILON<float>::low_precision;
+            tolerance_scaled = OP<float>::maximum(tolerance_scaled, EPSILON<float>::high_precision);
+            passed = passed && (OP<float>::abs(af - bf) <= tolerance_scaled);
+        }
+    }
     return passed;
 }
 
