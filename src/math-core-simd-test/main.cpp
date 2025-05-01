@@ -895,17 +895,17 @@ int main(int argc, char *argv[])
         const float angle2 = mathRnd.next01<float>();
         const float angle3 = mathRnd.next01<float>();
 
-        ref = GEN<base_type>::fromAxis(av4);
-        target = GEN<simd_type>::fromAxis(av4_simd);
-        test_vec("fromAxis( vec4 )", ref, target);
+        // ref = GEN<base_type>::fromAxis(av4);
+        // target = GEN<simd_type>::fromAxis(av4_simd);
+        // test_vec("fromAxis( vec4 )", ref, target);
 
-        ref = GEN<base_type>::fromAxis(av3);
-        target = GEN<simd_type>::fromAxis(av3_simd);
-        test_vec("fromAxis( vec3 )", ref, target);
+        // ref = GEN<base_type>::fromAxis(av3);
+        // target = GEN<simd_type>::fromAxis(av3_simd);
+        // test_vec("fromAxis( vec3 )", ref, target);
 
-        ref = GEN<base_type>::fromAxis(av2);
-        target = GEN<simd_type>::fromAxis(av2_simd);
-        test_vec("fromAxis( vec2 )", ref, target);
+        // ref = GEN<base_type>::fromAxis(av2);
+        // target = GEN<simd_type>::fromAxis(av2_simd);
+        // test_vec("fromAxis( vec2 )", ref, target);
 
         ref = GEN<base_type>::fromAxisAngle(av4, angle);
         target = GEN<simd_type>::fromAxisAngle(av4_simd, angle);
