@@ -57,11 +57,7 @@ bool compare_any_vec(const T &a, const T &b)
     bool passed = true;
     for (int c = 0; c < (int)T::cols; c++){
         for (int r = 0; r < (int)T::rows; r++){
-            const float &af = a[c][r];
-            const float &bf = b[c][r];
-            float tolerance_scaled = OP<float>::maximum(OP<float>::abs(af), OP<float>::abs(bf)) * EPSILON<float>::low_precision;
-            tolerance_scaled = OP<float>::maximum(tolerance_scaled, EPSILON<float>::high_precision);
-            passed = passed && (OP<float>::abs(af - bf) <= tolerance_scaled);
+            passed = passed && OP<float>::compare_almost_equal(a[c][r], b[c][r]);
         }
     }
     return passed;
@@ -78,7 +74,7 @@ bool compare_any_vec(const T &a, const T &b)
 {
     bool passed = true;
     for (int i = 0; i < T::array_count; i++)
-        passed = passed && (OP<float>::abs(a.array[i] - b.array[i]) < EPSILON<float>::low_precision);
+        passed = passed && OP<float>::compare_almost_equal(a.array[i], b.array[i]);
     return passed;
 }
 
@@ -87,7 +83,7 @@ void test_vec(const std::string &name, const T1 &ref, const T2 &computed)
 {
     const T1 computed_same_type = (const T1)computed;
 
-    bool passed = compare_any_vec(ref, computed_same_type);
+    bool passed = (ref == computed_same_type);//compare_any_vec(ref, computed_same_type);
 
     if (passed)
     {
@@ -111,6 +107,23 @@ void test_vec(const std::string &name, const T1 &ref, const T2 &computed)
 int main(int argc, char *argv[])
 {
     Path::setWorkingPath(Path::getExecutablePath(argv[0]));
+
+    /*
+
+    quat<float, SIMD_TYPE::NONE> a(
+        0.1f,0.2f,
+        0,0
+    );
+    quat<float, SIMD_TYPE::NONE> b(
+        0.1f,0.2f,
+        0,0
+    );
+
+    printf("%i\n", (int)(a == b) );
+
+    //*/
+
+    //*
 
     {
         using base_type = vec2<float, SIMD_TYPE::NONE>;
@@ -1592,6 +1605,8 @@ int main(int argc, char *argv[])
         target = OP<simd_type>::smoothstep((simd_type)a, (simd_type)b, (simd_type)c);
         test_vec("smoothstep( a, b, c )", ref, target);
     }
+
+    // */
 
     return 0;
 }
