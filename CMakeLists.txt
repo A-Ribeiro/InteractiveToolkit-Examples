@@ -123,6 +123,7 @@ add_subdirectory(src/condition-variable-using-semaphore)
 add_subdirectory(src/system-available-memory)
 add_subdirectory(src/filesystem)
 add_subdirectory(src/fixed-point)
+add_subdirectory(src/math-core-simd-test)
 
 # new io testing code
 
