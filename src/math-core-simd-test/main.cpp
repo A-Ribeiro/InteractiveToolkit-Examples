@@ -970,6 +970,10 @@ int main(int argc, char *argv[])
         const mat3f _mat3_simd = _mat3;
         const mat4f _mat4_simd = _mat4;
 
+        ref = GEN<base_type>::fromMat3(_mat3);
+        target = GEN<simd_type>::fromMat3(_mat3_simd);
+        test_vec("fromMat3( mat4 )", ref, target);
+
         ref = GEN<base_type>::fromMat4(_mat4);
         target = GEN<simd_type>::fromMat4(_mat4_simd);
         test_vec("fromMat4( mat4 )", ref, target);
