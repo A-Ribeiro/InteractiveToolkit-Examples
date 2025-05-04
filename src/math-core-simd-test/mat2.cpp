@@ -192,6 +192,45 @@ void test_mat2() {
         ref = OP<base_type>::smoothstep(a, b, c);
         target = OP<simd_type>::smoothstep((simd_type)a, (simd_type)b, (simd_type)c);
         test_vec("smoothstep( a, b, c )", ref, target);
+
+        printf("\n[mat2f gen]\n\n");
+
+        const float x = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
+        const float y = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
+        const float z = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
+        const float w = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
+
+        ref = GEN<base_type>::scale(x, y);
+        target = GEN<simd_type>::scale(x, y);
+        test_vec("scale( x, y )", ref, target);
+
+        ref = GEN<base_type>::scale(vec2f(x, y));
+        target = GEN<simd_type>::scale(vec2f(x, y));
+        test_vec("scale( vec2f(x, y) )", ref, target);
+
+        ref = GEN<base_type>::scale(vec3f(x, y, z));
+        target = GEN<simd_type>::scale(vec3f(x, y, z));
+        test_vec("scale( vec3f(x, y, z) )", ref, target);
+
+        ref = GEN<base_type>::scale(vec4f(x, y, z, 0));
+        target = GEN<simd_type>::scale(vec4f(x, y, z, 0));
+        test_vec("scale( vec4f(x, y, z, 0) )", ref, target);
+
+        ref = GEN<base_type>::rotate(x);
+        target = GEN<simd_type>::rotate(x);
+        test_vec("rotate( x )", ref, target);
+
+        mat3f mat3 = mathRnd.next<mat3f>() * 2.0 - 1.0;
+
+        ref = GEN<base_type>::fromMat3(mat3);
+        target = GEN<simd_type>::fromMat3(mat3);
+        test_vec("fromMat3( mat3 )", ref, target);
+
+        mat4f mat4 = mathRnd.next<mat4f>() * 2.0 - 1.0;
+
+        ref = GEN<base_type>::fromMat4(mat4);
+        target = GEN<simd_type>::fromMat4(mat4);
+        test_vec("fromMat4( mat4 )", ref, target);
     }
     
 }

@@ -3,7 +3,8 @@
 
 #include "common.h"
 
-void test_mat4() {
+void test_mat4()
+{
     {
         using base_type = mat4<float, SIMD_TYPE::NONE>;
         using simd_type = mat4f;
@@ -227,5 +228,226 @@ void test_mat4() {
         ref = OP<base_type>::smoothstep(a, b, c);
         target = OP<simd_type>::smoothstep((simd_type)a, (simd_type)b, (simd_type)c);
         test_vec("smoothstep( a, b, c )", ref, target);
+
+        printf("\n[mat4f gen]\n\n");
+
+        const float x = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
+        const float y = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
+        const float z = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
+        const float w = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
+
+        ref = GEN<base_type>::translateHomogeneous(x, y, z);
+        target = GEN<simd_type>::translateHomogeneous(x, y, z);
+        test_vec("translateHomogeneous( x, y, z )", ref, target);
+
+        ref = GEN<base_type>::translateHomogeneous(vec2f(x, y));
+        target = GEN<simd_type>::translateHomogeneous(vec2f(x, y));
+        test_vec("translateHomogeneous( vec2f(x, y) )", ref, target);
+
+        ref = GEN<base_type>::translateHomogeneous(vec3f(x, y, z));
+        target = GEN<simd_type>::translateHomogeneous(vec3f(x, y, z));
+        test_vec("translateHomogeneous( vec3f(x, y, z) )", ref, target);
+
+        ref = GEN<base_type>::translateHomogeneous(vec4f(x, y, z, 1));
+        target = GEN<simd_type>::translateHomogeneous(vec4f(x, y, z, 1));
+        test_vec("translateHomogeneous( vec4f(x, y, z, 1) )", ref, target);
+
+        ref = GEN<base_type>::scaleHomogeneous(x, y, z);
+        target = GEN<simd_type>::scaleHomogeneous(x, y, z);
+        test_vec("scaleHomogeneous( x, y, z )", ref, target);
+
+        ref = GEN<base_type>::scaleHomogeneous(vec2f(x, y));
+        target = GEN<simd_type>::scaleHomogeneous(vec2f(x, y));
+        test_vec("scaleHomogeneous( vec2f(x, y) )", ref, target);
+
+        ref = GEN<base_type>::scaleHomogeneous(vec3f(x, y, z));
+        target = GEN<simd_type>::scaleHomogeneous(vec3f(x, y, z));
+        test_vec("scaleHomogeneous( vec3f(x, y, z) )", ref, target);
+
+        ref = GEN<base_type>::scaleHomogeneous(vec4f(x, y, z, 0));
+        target = GEN<simd_type>::scaleHomogeneous(vec4f(x, y, z, 0));
+        test_vec("scaleHomogeneous( vec4f(x, y, z, 0) )", ref, target);
+
+        ref = GEN<base_type>::xRotateHomogeneous(x);
+        target = GEN<simd_type>::xRotateHomogeneous(x);
+        test_vec("xRotateHomogeneous( x )", ref, target);
+
+        ref = GEN<base_type>::yRotateHomogeneous(x);
+        target = GEN<simd_type>::yRotateHomogeneous(x);
+        test_vec("yRotateHomogeneous( x )", ref, target);
+
+        ref = GEN<base_type>::zRotateHomogeneous(x);
+        target = GEN<simd_type>::zRotateHomogeneous(x);
+        test_vec("zRotateHomogeneous( x )", ref, target);
+
+        ref = GEN<base_type>::fromEulerHomogeneous(x, y, z);
+        target = GEN<simd_type>::fromEulerHomogeneous(x, y, z);
+        test_vec("fromEulerHomogeneous( x, y, z )", ref, target);
+
+        const vec2f axis_v2 = mathRnd.nextDirection<vec2f>();
+        const vec3f axis_v3 = mathRnd.nextDirection<vec3f>();
+        const vec4f axis_v4 = mathRnd.nextDirection<vec4f>(true);
+
+        ref = GEN<base_type>::rotateHomogeneous(x, axis_v3.x, axis_v3.y, axis_v3.z);
+        target = GEN<simd_type>::rotateHomogeneous(x, axis_v3.x, axis_v3.y, axis_v3.z);
+        test_vec("rotateHomogeneous( x, axis_v3.x, axis_v3.y, axis_v3.z )", ref, target);
+
+        ref = GEN<base_type>::rotateHomogeneous(x, axis_v2);
+        target = GEN<simd_type>::rotateHomogeneous(x, axis_v2);
+        test_vec("rotateHomogeneous( x, axis_v2 )", ref, target);
+
+        ref = GEN<base_type>::rotateHomogeneous(x, axis_v3);
+        target = GEN<simd_type>::rotateHomogeneous(x, axis_v3);
+        test_vec("rotateHomogeneous( x, axis_v3 )", ref, target);
+
+        ref = GEN<base_type>::rotateHomogeneous(x, axis_v4);
+        target = GEN<simd_type>::rotateHomogeneous(x, axis_v4);
+        test_vec("rotateHomogeneous( x, axis_v4 )", ref, target);
+
+        float FovY = mathRnd.nextRange<float>(OP<float>::deg_2_rad(30.0f), OP<float>::deg_2_rad(120.0f));
+        float aspectX = mathRnd.nextRange<float>(4.0f / 3.0f, 16.0f / 9.0f);
+        float near_ = mathRnd.nextRange<float>(0.00001f, 0.1f);
+        float far_ = mathRnd.nextRange<float>(10.0f, 1000.0f);
+
+        ref = GEN<base_type>::projection_perspective_rh_negative_one(FovY, aspectX, near_, far_);
+        target = GEN<simd_type>::projection_perspective_rh_negative_one(FovY, aspectX, near_, far_);
+        test_vec("projection_perspective_rh_negative_one( FovY, aspectX, near_, far_ )", ref, target);
+
+        float focalLength = mathRnd.nextRange<float>(35.0f, 80.0f); // 35mm to 80mm
+        float height = mathRnd.nextRange<float>(480.0f, 1440.0f);
+        ;
+        float width = height * aspectX;
+
+        ref = GEN<base_type>::projection_perspective_rh_negative_one(focalLength, width, height, near_, far_);
+        target = GEN<simd_type>::projection_perspective_rh_negative_one(focalLength, width, height, near_, far_);
+        test_vec("projection_perspective_rh_negative_one( focalLength, width, height, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_perspective_rh_zero_one(FovY, aspectX, near_, far_);
+        target = GEN<simd_type>::projection_perspective_rh_zero_one(FovY, aspectX, near_, far_);
+        test_vec("projection_perspective_rh_zero_one( FovY, aspectX, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_perspective_rh_zero_one(focalLength, width, height, near_, far_);
+        target = GEN<simd_type>::projection_perspective_rh_zero_one(focalLength, width, height, near_, far_);
+        test_vec("projection_perspective_rh_zero_one( focalLength, width, height, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_perspective_lh_negative_one(FovY, aspectX, near_, far_);
+        target = GEN<simd_type>::projection_perspective_lh_negative_one(FovY, aspectX, near_, far_);
+        test_vec("projection_perspective_lh_negative_one( FovY, aspectX, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_perspective_lh_negative_one(focalLength, width, height, near_, far_);
+        target = GEN<simd_type>::projection_perspective_lh_negative_one(focalLength, width, height, near_, far_);
+        test_vec("projection_perspective_lh_negative_one( focalLength, width, height, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_perspective_lh_zero_one(FovY, aspectX, near_, far_);
+        target = GEN<simd_type>::projection_perspective_lh_zero_one(FovY, aspectX, near_, far_);
+        test_vec("projection_perspective_lh_zero_one( FovY, aspectX, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_perspective_lh_zero_one(focalLength, width, height, near_, far_);
+        target = GEN<simd_type>::projection_perspective_lh_zero_one(focalLength, width, height, near_, far_);
+        test_vec("projection_perspective_lh_zero_one( focalLength, width, height, near_, far_ )", ref, target);
+
+        float Left = -mathRnd.nextRange<float>(1.0f, 2.0f);
+        float Right = mathRnd.nextRange<float>(1.0f, 2.0f);
+        float Bottom = -mathRnd.nextRange<float>(1.0f, 2.0f);
+        float Top = mathRnd.nextRange<float>(1.0f, 2.0f);
+
+        ref = GEN<base_type>::projection_frustum_rh_negative_one(Left, Right, Bottom, Top, near_, far_);
+        target = GEN<simd_type>::projection_frustum_rh_negative_one(Left, Right, Bottom, Top, near_, far_);
+        test_vec("projection_frustum_rh_negative_one( Left, Right, Bottom, Top, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_frustum_rh_zero_one(Left, Right, Bottom, Top, near_, far_);
+        target = GEN<simd_type>::projection_frustum_rh_zero_one(Left, Right, Bottom, Top, near_, far_);
+        test_vec("projection_frustum_rh_zero_one( Left, Right, Bottom, Top, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_frustum_lh_negative_one(Left, Right, Bottom, Top, near_, far_);
+        target = GEN<simd_type>::projection_frustum_lh_negative_one(Left, Right, Bottom, Top, near_, far_);
+        test_vec("projection_frustum_rh_negative_one( Left, Right, Bottom, Top, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_frustum_lh_zero_one(Left, Right, Bottom, Top, near_, far_);
+        target = GEN<simd_type>::projection_frustum_lh_zero_one(Left, Right, Bottom, Top, near_, far_);
+        test_vec("projection_frustum_rh_zero_one( Left, Right, Bottom, Top, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_ortho_rh_negative_one(Left, Right, Bottom, Top, near_, far_);
+        target = GEN<simd_type>::projection_ortho_rh_negative_one(Left, Right, Bottom, Top, near_, far_);
+        test_vec("projection_ortho_rh_negative_one( Left, Right, Bottom, Top, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_ortho_rh_zero_one(Left, Right, Bottom, Top, near_, far_);
+        target = GEN<simd_type>::projection_ortho_rh_zero_one(Left, Right, Bottom, Top, near_, far_);
+        test_vec("projection_ortho_rh_zero_one( Left, Right, Bottom, Top, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_ortho_lh_negative_one(Left, Right, Bottom, Top, near_, far_);
+        target = GEN<simd_type>::projection_ortho_lh_negative_one(Left, Right, Bottom, Top, near_, far_);
+        test_vec("projection_ortho_lh_negative_one( Left, Right, Bottom, Top, near_, far_ )", ref, target);
+
+        ref = GEN<base_type>::projection_ortho_lh_zero_one(Left, Right, Bottom, Top, near_, far_);
+        target = GEN<simd_type>::projection_ortho_lh_zero_one(Left, Right, Bottom, Top, near_, far_);
+        test_vec("projection_ortho_lh_zero_one( Left, Right, Bottom, Top, near_, far_ )", ref, target);
+
+        const vec3f up_v3 = mathRnd.nextDirection<vec3f>();
+        const vec4f up_v4 = mathRnd.nextDirection<vec4f>(true);
+
+        const vec3f pos_v3 = vec3f(x, y, z);
+        const vec4f pos_v4 = vec4f(x, y, z, 1);
+
+        ref = GEN<base_type>::cameraLookAtRH(axis_v3, up_v3, pos_v3);
+        target = GEN<simd_type>::cameraLookAtRH(axis_v3, up_v3, pos_v3);
+        test_vec("cameraLookAtRH( axis_v3, up_v3, pos_v3 )", ref, target);
+
+        ref = GEN<base_type>::cameraLookAtLH(axis_v3, up_v3, pos_v3);
+        target = GEN<simd_type>::cameraLookAtLH(axis_v3, up_v3, pos_v3);
+        test_vec("cameraLookAtLH( axis_v3, up_v3, pos_v3 )", ref, target);
+
+        ref = GEN<base_type>::cameraLookAtRH(axis_v4, up_v4, pos_v4);
+        target = GEN<simd_type>::cameraLookAtRH(axis_v4, up_v4, pos_v4);
+        test_vec("cameraLookAtRH( axis_v4, up_v4, pos_v4 )", ref, target);
+
+        ref = GEN<base_type>::cameraLookAtLH(axis_v4, up_v4, pos_v4);
+        target = GEN<simd_type>::cameraLookAtLH(axis_v4, up_v4, pos_v4);
+        test_vec("cameraLookAtLH( axis_v4, up_v4, pos_v4 )", ref, target);
+
+        ref = GEN<base_type>::modelLookAtRH(axis_v3, up_v3, pos_v3);
+        target = GEN<simd_type>::modelLookAtRH(axis_v3, up_v3, pos_v3);
+        test_vec("modelLookAtRH( axis_v3, up_v3, pos_v3 )", ref, target);
+
+        ref = GEN<base_type>::modelLookAtLH(axis_v3, up_v3, pos_v3);
+        target = GEN<simd_type>::modelLookAtLH(axis_v3, up_v3, pos_v3);
+        test_vec("modelLookAtLH( axis_v3, up_v3, pos_v3 )", ref, target);
+
+        ref = GEN<base_type>::modelLookAtRH(axis_v4, up_v4, pos_v4);
+        target = GEN<simd_type>::modelLookAtRH(axis_v4, up_v4, pos_v4);
+        test_vec("modelLookAtRH( axis_v4, up_v4, pos_v4 )", ref, target);
+
+        ref = GEN<base_type>::modelLookAtLH(axis_v4, up_v4, pos_v4);
+        target = GEN<simd_type>::modelLookAtLH(axis_v4, up_v4, pos_v4);
+        test_vec("modelLookAtLH( axis_v4, up_v4, pos_v4 )", ref, target);
+
+        const vec2f front_v2 = mathRnd.nextDirection<vec2f>();
+        const vec2f pos_v2 = vec2f(x, y);
+
+        ref = GEN<base_type>::lookAtRotationRH(front_v2, pos_v2);
+        target = GEN<simd_type>::lookAtRotationRH(front_v2, pos_v2);
+        test_vec("lookAtRotationRH( front_v2, pos_v2 )", ref, target);
+
+        ref = GEN<base_type>::lookAtRotationLH(front_v2, pos_v2);
+        target = GEN<simd_type>::lookAtRotationLH(front_v2, pos_v2);
+        test_vec("modelLookAtLH( front_v2, pos_v2 )", ref, target);
+
+        quatf quat = GEN<quatf>::fromEuler(x, y, z);
+
+        ref = GEN<base_type>::fromQuat(quat);
+        target = GEN<simd_type>::fromQuat(quat);
+        test_vec("fromQuat( quat )", ref, target);
+
+        mat2f mat2 = mathRnd.next<mat2f>() * 2.0 - 1.0;
+
+        ref = GEN<base_type>::fromMat2(mat2);
+        target = GEN<simd_type>::fromMat2(mat2);
+        test_vec("fromMat2( mat2 )", ref, target);
+
+        mat3f mat3 = mathRnd.next<mat3f>() * 2.0 - 1.0;
+
+        ref = GEN<base_type>::fromMat3(mat3);
+        target = GEN<simd_type>::fromMat3(mat3);
+        test_vec("fromMat3( mat3 )", ref, target);
     }
 }
