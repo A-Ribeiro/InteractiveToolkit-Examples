@@ -11,3 +11,8 @@ add_executable(${PROJECT_NAME} ${PUBLIC_HEADERS} ${SRC})
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "BIN")
 
 target_link_libraries( ${PROJECT_NAME} ${INTERACTIVETOOLKIT_LIBRARIES})
+
+
+if (MSVC)
+    target_compile_options( ${PROJECT_NAME} PUBLIC /Zm2000 /O1 /MP1)
+endif()
