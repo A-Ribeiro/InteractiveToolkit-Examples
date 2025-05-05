@@ -231,10 +231,10 @@ void test_mat4()
 
         printf("\n[mat4f gen]\n\n");
 
-        const float x = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
-        const float y = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
-        const float z = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
-        const float w = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
+        const float x = (mathRnd.next01<float>() * 2.0f - 1.0f) * CONSTANT<float>::PI * 2.0f;
+        const float y = (mathRnd.next01<float>() * 2.0f - 1.0f) * CONSTANT<float>::PI * 2.0f;
+        const float z = (mathRnd.next01<float>() * 2.0f - 1.0f) * CONSTANT<float>::PI * 2.0f;
+        const float w = (mathRnd.next01<float>() * 2.0f - 1.0f) * CONSTANT<float>::PI * 2.0f;
 
         ref = GEN<base_type>::translateHomogeneous(x, y, z);
         target = GEN<simd_type>::translateHomogeneous(x, y, z);
@@ -438,13 +438,13 @@ void test_mat4()
         target = GEN<simd_type>::fromQuat(quat);
         test_vec("fromQuat( quat )", ref, target);
 
-        mat2f mat2 = mathRnd.next<mat2f>() * 2.0 - 1.0;
+        mat2f mat2 = mathRnd.next<mat2f>() * 2.0f - 1.0f;
 
         ref = GEN<base_type>::fromMat2(mat2);
         target = GEN<simd_type>::fromMat2(mat2);
         test_vec("fromMat2( mat2 )", ref, target);
 
-        mat3f mat3 = mathRnd.next<mat3f>() * 2.0 - 1.0;
+        mat3f mat3 = mathRnd.next<mat3f>() * 2.0f - 1.0f;
 
         ref = GEN<base_type>::fromMat3(mat3);
         target = GEN<simd_type>::fromMat3(mat3);
