@@ -195,10 +195,10 @@ void test_mat2() {
 
         printf("\n[mat2f gen]\n\n");
 
-        const float x = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
-        const float y = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
-        const float z = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
-        const float w = (mathRnd.next01<float>() * 2.0 - 1.0) * CONSTANT<float>::PI * 2.0f;
+        const float x = (mathRnd.next01<float>() * 2.0f - 1.0f) * CONSTANT<float>::PI * 2.0f;
+        const float y = (mathRnd.next01<float>() * 2.0f - 1.0f) * CONSTANT<float>::PI * 2.0f;
+        const float z = (mathRnd.next01<float>() * 2.0f - 1.0f) * CONSTANT<float>::PI * 2.0f;
+        const float w = (mathRnd.next01<float>() * 2.0f - 1.0f) * CONSTANT<float>::PI * 2.0f;
 
         ref = GEN<base_type>::scale(x, y);
         target = GEN<simd_type>::scale(x, y);
