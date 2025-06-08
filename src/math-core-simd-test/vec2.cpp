@@ -96,9 +96,17 @@ void test_vec2() {
         target = OP<simd_type>::angleBetween((simd_type)a, (simd_type)b);
         test_vec("angleBetween( a, b )", ref, target);
 
-        ref = OP<base_type>::cross_z_result(a, b);
-        target = OP<simd_type>::cross_z_result((simd_type)a, (simd_type)b);
-        test_vec("cross_z_result( a, b )", ref, target);
+        ref = OP<base_type>::cross_z_mag(a, b);
+        target = OP<simd_type>::cross_z_mag((simd_type)a, (simd_type)b);
+        test_vec("cross_z_mag( a, b )", ref, target);
+
+        ref = OP<base_type>::orientation(a, b, c);
+        target = OP<simd_type>::orientation((simd_type)a, (simd_type)b, (simd_type)c);
+        test_vec("orientation( a, b, c )", ref, target);
+
+        ref = OP<base_type>::point_inside_triangle(a, b, c, d);
+        target = OP<simd_type>::point_inside_triangle((simd_type)a, (simd_type)b, (simd_type)c, (simd_type)d);
+        test_vec("point_inside_triangle( a, b, c, d )", ref, target);
 
         ref = OP<base_type>::cross_z_up(a);
         target = OP<simd_type>::cross_z_up((simd_type)a);

@@ -100,6 +100,10 @@ void test_vec3() {
         target = OP<simd_type>::cross((simd_type)a, (simd_type)b);
         test_vec("cross( a, b )", ref, target);
 
+        ref = OP<base_type>::orientation(a, b, c, d);
+        target = OP<simd_type>::orientation((simd_type)a, (simd_type)b, (simd_type)c, (simd_type)d);
+        test_vec("orientation( a, b, c, d )", ref, target);
+
         ref = OP<base_type>::reflect(a, b);
         target = OP<simd_type>::reflect((simd_type)a, (simd_type)b);
         test_vec("reflect( a, b )", ref, target);
