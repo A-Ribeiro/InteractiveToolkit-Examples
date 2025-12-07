@@ -94,6 +94,13 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# set float almost equal comparison precision
+if( NOT ITK_FLOAT_ALMOST_EQUAL )
+    set( ITK_FLOAT_ALMOST_EQUAL USE_RELATIVE_PLUS_FIXED_DECIMAL CACHE STRING
+                "Choose the float almost equal comparison precision."
+                FORCE )
+endif()
+
 add_subdirectory(libs/InteractiveToolkit "${CMAKE_BINARY_DIR}/lib/InteractiveToolkit")
 find_package(InteractiveToolkit REQUIRED)
 include_directories(${INTERACTIVETOOLKIT_INCLUDE_DIRS})
