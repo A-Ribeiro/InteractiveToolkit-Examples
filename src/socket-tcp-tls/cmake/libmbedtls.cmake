@@ -1,4 +1,4 @@
-if (TARGET mbedtls OR TARGET mbedx509 OR TARGET tfpsacrypto)
+if (TARGET mbedtls OR TARGET mbedx509 OR TARGET tfpsacrypto OR TARGET mbedcrypto)
     return()
 endif()
 
@@ -7,9 +7,11 @@ include(${CMAKE_SOURCE_DIR}/libs/InteractiveToolkit-Extension/cmake/tool.cmake)
 set( LIB_MBEDTLS TryFindPackageFirst CACHE STRING "Choose the Library Source." )
 set_property(CACHE LIB_MBEDTLS PROPERTY STRINGS None TryFindPackageFirst UsingFindPackage FromSource)
 
+tool_append_if_not_exists_and_make_global(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake-modules")
+
 if(LIB_MBEDTLS STREQUAL TryFindPackageFirst)
-    find_package(MbedTLS COMPONENTS mbedtls tfpsacrypto mbedx509 QUIET)
-    if (MbedTLS_FOUND)
+    find_package(MbedTLS COMPONENTS mbedtls tfpsacrypto mbedx509 REQUIRED)
+    if (MBEDTLS_FOUND)
         message(STATUS "[LIB_MBEDTLS] using system lib.")
         set(LIB_MBEDTLS UsingFindPackage)
     else()
@@ -119,10 +121,13 @@ if(LIB_MBEDTLS STREQUAL FromSource)
     
     # include_directories("${ARIBEIRO_LIBS_DIR}/sfml/include/")
 
+    message(STATUS "MbedTLS From Source - Link with:")
+    message(STATUS "  mbedtls tfpsacrypto mbedx509")
+
 elseif(LIB_MBEDTLS STREQUAL UsingFindPackage)
 
-    message(STATUS "MbedTLS FIND PACKAGE - Uses Target to link with:")
-    message(STATUS "  MbedTLS::mbedtls MbedTLS::tfpsacrypto MbedTLS::mbedx509")
+    message(STATUS "MbedTLS FIND PACKAGE - Link with:")
+    message(STATUS "  mbedtls mbedcrypto mbedx509")
 
 else()
     message( FATAL_ERROR "You need to specify the lib source." )

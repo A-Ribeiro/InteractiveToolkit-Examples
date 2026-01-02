@@ -1,5 +1,6 @@
 project (socket-tcp-tls)
 
+# set( LIB_MBEDTLS FromSource CACHE STRING "Choose the Library Source." FORCE )
 include (cmake/libmbedtls.cmake)
 
 FILE( GLOB_RECURSE PUBLIC_HEADERS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.h)
