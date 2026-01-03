@@ -124,10 +124,16 @@ if(LIB_MBEDTLS STREQUAL FromSource)
     message(STATUS "MbedTLS From Source - Link with:")
     message(STATUS "  mbedtls tfpsacrypto mbedx509")
 
+    add_library(mbedtls-all INTERFACE)
+    target_link_libraries(mbedtls-all INTERFACE mbedtls tfpsacrypto mbedx509)
+
 elseif(LIB_MBEDTLS STREQUAL UsingFindPackage)
 
     message(STATUS "MbedTLS FIND PACKAGE - Link with:")
     message(STATUS "  mbedtls mbedcrypto mbedx509")
+
+    add_library(mbedtls-all INTERFACE)
+    target_link_libraries(mbedtls-all INTERFACE mbedtls mbedcrypto mbedx509)
 
 else()
     message( FATAL_ERROR "You need to specify the lib source." )

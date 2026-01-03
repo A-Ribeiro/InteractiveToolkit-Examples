@@ -13,5 +13,8 @@ add_executable(${PROJECT_NAME} ${PUBLIC_HEADERS} ${SRC})
 # set the target's folder (for IDEs that support it, e.g. Visual Studio)
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "BIN")
 
-target_link_libraries( ${PROJECT_NAME} ${INTERACTIVETOOLKIT_LIBRARIES})
+target_link_libraries( ${PROJECT_NAME} 
+    ${INTERACTIVETOOLKIT_LIBRARIES}
+    mbedtls-all
+)
 

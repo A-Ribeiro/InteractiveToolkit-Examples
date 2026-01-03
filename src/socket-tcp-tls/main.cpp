@@ -279,7 +279,7 @@ void start_server()
     }
     threads.clear();
 }
-
+#include "tls/SystemCertificates.h"
 int main(int argc, char *argv[])
 {
     Path::setWorkingPath(Path::getExecutablePath(argv[0]));
@@ -306,6 +306,14 @@ int main(int argc, char *argv[])
                "./socket-tcp connect <IP>\n"
                "\n");
     }
+
+    TLS::SystemCertificates sys_certs;
+    bool result = sys_certs.iterate_over_x509_certificates([](const uint8_t *data, size_t size)
+                                                           { printf("Certificate CRT size: %zu bytes\n", size); },
+                                                           [](const uint8_t *data, size_t size)
+                                                           { printf("Certificate CRL size: %zu bytes\n", size); });
+
+    printf("%s\n", result ? "Success" : "Failure");
 
     return 0;
 }
