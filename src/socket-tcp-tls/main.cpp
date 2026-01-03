@@ -6,6 +6,11 @@
 
 using namespace ITKCommon;
 
+const char *HTTP_GET_REQUEST =
+    "GET http://alessandroribeiro.thegeneralsolution.com HTTP/1.1\r\n"
+    "Connection: close\r\n"
+    "\r\n";
+
 void connect(const std::string addr_ipv4)
 {
 
@@ -26,8 +31,8 @@ void connect(const std::string addr_ipv4)
     char init[16] = "init";
     printf("sending: \"init\" size: %u bytes\n", (uint32_t)sizeof(init));
     if (!clientSocket.write_buffer(
-        (uint8_t *)&init, 
-        sizeof(init)))
+            (uint8_t *)&init,
+            sizeof(init)))
     {
         printf("Failed to send handshake...\n");
         clientSocket.close();
@@ -53,27 +58,20 @@ void connect(const std::string addr_ipv4)
     clientSocket.close();
 }
 
-bool use_blocking_sockets = true;
-
-void start_server(bool blocking = true)
+void start_server()
 {
-
-    use_blocking_sockets = blocking;
-
-    printf("start server\n");
-
-    printf("use_blocking_sockets:%i\n", use_blocking_sockets);
+    printf("start server on port 8443\n");
 
     Platform::SocketTCPAccept serverSocket(
-        use_blocking_sockets, // blocking
-        true,                 // reuseAddress
-        true                  // noDelay
+        true, // blocking
+        true, // reuseAddress
+        true  // noDelay
     );
 
     if (!serverSocket.bindAndListen(
-            "INADDR_ANY",                                  // interface address
-            Platform::NetworkConstants::PUBLIC_PORT_START, // port
-            10                                             // input queue
+            "INADDR_ANY", // interface address
+            8443,         // port
+            10            // input queue
             ))
     {
         printf("Error to bind address\n");
@@ -88,26 +86,12 @@ void start_server(bool blocking = true)
     {
 
         bool connection_accepted = true;
-        if (use_blocking_sockets)
+        // blocking mode
+        if (!serverSocket.accept(clientSocket))
         {
-            // blocking mode
-            if (!serverSocket.accept(clientSocket))
-            {
-                if (serverSocket.isSignaled() || serverSocket.isClosed() || !serverSocket.isListening())
-                    break;
-                connection_accepted = false;
-            }
-        }
-        else
-        {
-            // non-blocking mode
-            if (!serverSocket.accept(clientSocket))
-            {
-                printf("*");
-                fflush(stdout);
-                Platform::Sleep::millis(500);
-                connection_accepted = false;
-            }
+            if (serverSocket.isSignaled() || serverSocket.isClosed() || !serverSocket.isListening())
+                break;
+            connection_accepted = false;
         }
 
         // clear deleted threads
@@ -134,33 +118,122 @@ void start_server(bool blocking = true)
             char client_str[32];
             snprintf(client_str, 32, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));
 
-            char initial_string[16] = {0};
+            std::vector<char> line;
+            line.reserve(1024);
+            int max_http_header_lines = 100;
+
+            char input_buffer[1024] = {0};
             uint32_t read_feedback;
-            if (!socket->read_buffer((uint8_t*)initial_string, sizeof(initial_string), &read_feedback)) {
-                printf("Connection or thread interrupted with the read feedback: %u\n", read_feedback);
-                socket->close();
-                delete socket;
-                return;
+            uint32_t curr_reading;
+            bool found_crlf = false;
+
+            std::string requested_path;
+
+            while (!found_crlf) {
+                if (!socket->read_buffer((uint8_t*)input_buffer, sizeof(input_buffer), &read_feedback)) {
+                    printf("[%s] Connection or thread interrupted with the read feedback: %u\n", client_str, read_feedback);
+                    socket->close();
+                    delete socket;
+                    return;
+                }
+                // printf("[%s] receiving: \"%s\" size: %u bytes\n", client_str, input_buffer, read_feedback);
+
+
+                curr_reading = 0;
+                do {
+                    for(uint32_t i=curr_reading;i<read_feedback;i++) {
+                        line.push_back(input_buffer[i]);
+                        // printf("line: \"%s\"\n", std::string(line.begin(), line.end()).c_str());
+                        if (line.size() >= 1024 || input_buffer[i] == '\0'){
+                            printf("[%s] HTTP line too long: %u\n", client_str, (uint32_t)line.size());
+                            socket->close();
+                            delete socket;
+                            return;
+                        }
+                        if (line.size() >= 2 && line[line.size()-1] == '\n' && line[line.size()-2] == '\r')
+                            break;
+                    }
+
+                    found_crlf = line.size() == 2 && line[0] == '\r' && line[1] == '\n';
+
+                    curr_reading += (uint32_t)line.size();
+
+                    if (line.size() >= 2 && line[line.size()-2] == '\r' && line[line.size()-1] == '\n') {
+                        line.pop_back();
+                        line.pop_back();
+                    }
+
+                    std::string header = std::string(line.begin(), line.end());
+
+                    printf("[%s] header: \"%s\"\n", client_str, header.c_str());
+
+                    if (ITKCommon::StringUtil::startsWith(header, "GET")){
+                        auto parts = ITKCommon::StringUtil::tokenizer(header, " ");
+                        if (parts.size() == 3 && ITKCommon::StringUtil::startsWith(parts[2], "HTTP/"))
+                            requested_path = parts[1];
+                    }
+
+                    max_http_header_lines--;
+                    if (max_http_header_lines <= 0) {
+                        printf("[%s] Too many HTTP header lines readed...\n", client_str);
+                        socket->close();
+                        delete socket;
+                        return;
+                    }
+
+                    line.clear();
+                } while(!found_crlf && curr_reading < read_feedback);
             }
 
-            printf("[%s] receiving: \"%s\" size: %u bytes\n", client_str, initial_string, read_feedback);
 
-            Platform::Sleep::millis(1000);
+            //Platform::Sleep::millis(1000);
 
-            char response[64];
+            printf("[%s] writting response...\n", client_str);
+
             uint32_t write_feedback;
-            snprintf(response, 64, "Your IP is: %s", client_str);
 
-            socket->write_buffer(
-                (uint8_t*)response,
-                sizeof(response),
-                &write_feedback
-            );
+            if (requested_path.compare("/") != 0){
+                // not the / path... return not found
+                const char* not_found =
+                    "HTTP/1.1 404 Not Found\r\n"
+                    "Content-Type: text/plain\r\n"
+                    "Content-Length: 13\r\n"
+                    "\r\n"
+                    "404 Not Found";
+                socket->write_buffer(
+                    (uint8_t*)not_found,
+                    strlen(not_found),
+                    &write_feedback
+                );
+            } else {
 
-            printf("[%s] closing socket\n", client_str);
+                char HTTP_Headers[128];
+                char HTTP_Body[1024];
+
+                snprintf(HTTP_Body, 1024,
+                    "Your IP is: %s", client_str);
+
+                snprintf(HTTP_Headers, 128,
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/plain\r\n"
+                    "Content-Length: %i\r\n"
+                    "\r\n", (int)strlen(HTTP_Body));
+
+
+                socket->write_buffer(
+                    (uint8_t*)HTTP_Headers,
+                    strlen(HTTP_Headers),
+                    &write_feedback
+                );
+                socket->write_buffer(
+                    (uint8_t*)HTTP_Body,
+                    strlen(HTTP_Body),
+                    &write_feedback
+                );
+            }
+
             socket->close();
-            delete socket;
-            }));
+            delete socket; }));
 
         aux->start();
 
@@ -194,15 +267,13 @@ int main(int argc, char *argv[])
     if (argc == 3 && (strcmp(argv[1], "connect") == 0))
         connect(argv[2]);
     else if (argc == 2 && (strcmp(argv[1], "server") == 0))
-        start_server( true );
-    else if (argc == 3 && (strcmp(argv[1], "server") == 0))
-        start_server( strcmp(argv[2], "non-block") != 0 );
+        start_server();
     else
     {
         printf("Examples: \n"
                "\n"
                "# start server:\n"
-               "./socket-tcp server [non-block]\n"
+               "./socket-tcp server\n"
                "\n"
                "# connect to server:\n"
                "./socket-tcp connect <IP>\n"
