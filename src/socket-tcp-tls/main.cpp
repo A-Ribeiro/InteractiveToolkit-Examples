@@ -29,17 +29,20 @@ void connect(const std::string addr_ipv4)
         "Connection: close\r\n"
         "\r\n";
 
-    printf("sending: \"HTTP_GET_REQUEST\" size: %u bytes\n", (uint32_t)strlen(HTTP_GET_REQUEST));
-    if (!clientSocket.write_buffer(
-            (uint8_t *)HTTP_GET_REQUEST,
-            (uint32_t)strlen(HTTP_GET_REQUEST)))
+    //while (1)
     {
-        if (clientSocket.isWriteTimedout())
-            printf("write timed out...\n");
+        printf("sending: \"HTTP_GET_REQUEST\" size: %u bytes\n", (uint32_t)strlen(HTTP_GET_REQUEST));
+        if (!clientSocket.write_buffer(
+                (uint8_t *)HTTP_GET_REQUEST,
+                (uint32_t)strlen(HTTP_GET_REQUEST)))
+        {
+            if (clientSocket.isWriteTimedout())
+                printf("write timed out...\n");
 
-        printf("Failed to send handshake...\n");
-        clientSocket.close();
-        return;
+            printf("Failed to send handshake...\n");
+            clientSocket.close();
+            return;
+        }
     }
 
     printf("receiving...\n");
@@ -48,9 +51,9 @@ void connect(const std::string addr_ipv4)
     while (true)
     {
         if (!clientSocket.read_buffer(
-            (uint8_t *)&response,
-            sizeof(response),
-            &read_feedback))
+                (uint8_t *)&response,
+                sizeof(response),
+                &read_feedback))
         {
             if (clientSocket.isReadTimedout())
                 printf("read timed out...\n");
@@ -59,7 +62,7 @@ void connect(const std::string addr_ipv4)
             clientSocket.close();
             return;
         }
-        
+
         printf("receiving: \"%s\" size: %u bytes\n", std::string(response, read_feedback).c_str(), read_feedback);
     }
 
@@ -124,6 +127,8 @@ void start_server()
             Platform::SocketTCP *socket = clientSocket;
             socket->setNoDelay(true);
             socket->setReadTimeout(500);// 500 ms read timeout
+
+            Platform::Sleep::millis(10000); // wait a bit for client to send data
 
             char client_str[32];
             snprintf(client_str, 32, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));
