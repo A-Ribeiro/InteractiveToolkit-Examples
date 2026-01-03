@@ -114,6 +114,7 @@ void start_server()
             // client thread (server side)
             Platform::SocketTCP *socket = clientSocket;
             socket->setNoDelay(true);
+            socket->setReadTimeout(500);// 500 ms read timeout
 
             char client_str[32];
             snprintf(client_str, 32, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));
@@ -131,10 +132,19 @@ void start_server()
 
             while (!found_crlf) {
                 if (!socket->read_buffer((uint8_t*)input_buffer, sizeof(input_buffer), &read_feedback)) {
-                    printf("[%s] Connection or thread interrupted with the read feedback: %u\n", client_str, read_feedback);
-                    socket->close();
-                    delete socket;
-                    return;
+                    if (socket->isReadTimedout()){
+
+                        printf("[%s] Read NO Headers timed out\n", client_str);
+                        socket->close();
+                        delete socket;
+
+                        return;
+                    } else {
+                        printf("[%s] Connection or thread interrupted with the read feedback: %u\n", client_str, read_feedback);
+                        socket->close();
+                        delete socket;
+                        return;
+                    }
                 }
                 // printf("[%s] receiving: \"%s\" size: %u bytes\n", client_str, input_buffer, read_feedback);
 
