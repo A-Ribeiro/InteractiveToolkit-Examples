@@ -11,7 +11,7 @@ void connect(const std::string addr_ipv4)
     Platform::SocketTCP clientSocket;
 
     printf("connecting...\n");
-    if (!clientSocket.connect(addr_ipv4, 8443))
+    if (!clientSocket.connect(addr_ipv4, 8444))
     {
         printf("Connect failed!!!... interrupting current thread\n");
         clientSocket.close();
@@ -22,14 +22,15 @@ void connect(const std::string addr_ipv4)
 
     clientSocket.setNoDelay(true);
     clientSocket.setWriteTimeout(500); // 500 ms write timeout
-    clientSocket.setReadTimeout(1500); // 1500 ms read timeout
+    // clientSocket.setReadTimeout(1500); // 1500 ms read timeout
 
     const char *HTTP_GET_REQUEST =
         "GET / HTTP/1.1\r\n"
         "Connection: close\r\n"
         "\r\n";
 
-    //while (1)
+    // Platform::Sleep::millis(10000); // wait a bit for client to send data
+    // while (1)
     {
         printf("sending: \"HTTP_GET_REQUEST\" size: %u bytes\n", (uint32_t)strlen(HTTP_GET_REQUEST));
         if (!clientSocket.write_buffer(
@@ -72,7 +73,7 @@ void connect(const std::string addr_ipv4)
 
 void start_server()
 {
-    printf("start server on port 8443\n");
+    printf("start server\n");
 
     Platform::SocketTCPAccept serverSocket(
         true, // blocking
@@ -82,7 +83,7 @@ void start_server()
 
     if (!serverSocket.bindAndListen(
             "INADDR_ANY", // interface address
-            8443,         // port
+            8444,         // port
             10            // input queue
             ))
     {
@@ -128,7 +129,7 @@ void start_server()
             socket->setNoDelay(true);
             socket->setReadTimeout(500);// 500 ms read timeout
 
-            Platform::Sleep::millis(10000); // wait a bit for client to send data
+            // Platform::Sleep::millis(10000); // wait a bit for client to send data
 
             char client_str[32];
             snprintf(client_str, 32, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));
@@ -227,7 +228,7 @@ void start_server()
                     "404 Not Found";
                 socket->write_buffer(
                     (uint8_t*)not_found,
-                    strlen(not_found),
+                    (uint32_t)strlen(not_found),
                     &write_feedback
                 );
             } else {
@@ -248,12 +249,12 @@ void start_server()
 
                 socket->write_buffer(
                     (uint8_t*)HTTP_Headers,
-                    strlen(HTTP_Headers),
+                    (uint32_t)strlen(HTTP_Headers),
                     &write_feedback
                 );
                 socket->write_buffer(
                     (uint8_t*)HTTP_Body,
-                    strlen(HTTP_Body),
+                    (uint32_t)strlen(HTTP_Body),
                     &write_feedback
                 );
             }
