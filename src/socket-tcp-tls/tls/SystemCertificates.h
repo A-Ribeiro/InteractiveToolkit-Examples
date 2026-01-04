@@ -3,10 +3,8 @@
 #include <InteractiveToolkit/EventCore/Callback.h>
 
 #if defined(__APPLE__)
-//#include <Availability.h>
 #include <Security/Security.h>
-//#include <CoreFoundation/CoreFoundation.h>
-#include <Foundation/FoundationErrors.h>
+#include <CoreFoundation/CoreFoundation.h>
 #endif
 
 

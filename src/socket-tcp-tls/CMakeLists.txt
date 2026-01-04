@@ -18,8 +18,9 @@ target_link_libraries( ${PROJECT_NAME}
     mbedtls-all
 )
 
-# SystemCertificates on Windows
 if(WIN32)
+    # SystemCertificates on Windows
     target_link_libraries(${PROJECT_NAME} Crypt32)
+elseif(APPLE)
+    target_link_libraries(${PROJECT_NAME} Security CoreFoundation)
 endif()
-
