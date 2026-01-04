@@ -9,6 +9,7 @@
 #endif
 
 #include <InteractiveToolkit/ITKCommon/FileSystem/Directory.h>
+#include <InteractiveToolkit/Platform/Core/SocketUtils.h>
 
 namespace TLS
 {
@@ -18,8 +19,8 @@ namespace TLS
                                                const EventCore::Callback<void(const uint8_t *data, size_t size)> &onCRT,
                                                const EventCore::Callback<void(const uint8_t *data, size_t size)> &onCRL)
     {
-        HCERTSTORE store = CertOpenSystemStoreA(0, store);
-        if (!store)
+        HCERTSTORE systemStore = CertOpenSystemStoreA(0, store);
+        if (!systemStore)
         {
             printf("ERROR on open Windows certificate store: %s\n", Platform::SocketUtils::getLastErrorMessage().c_str());
             return false;
@@ -28,7 +29,7 @@ namespace TLS
         if (onCRT != nullptr)
         {
             const CERT_CONTEXT *cert{};
-            while (cert = CertEnumCertificatesInStore(store, cert))
+            while (cert = CertEnumCertificatesInStore(systemStore, cert))
             {
                 // could fail, keep reading next
                 if (cert->dwCertEncodingType == X509_ASN_ENCODING)
@@ -39,7 +40,7 @@ namespace TLS
         if (onCRL != nullptr)
         {
             const CRL_CONTEXT *crl{};
-            while (crl = CertEnumCRLsInStore(store, crl))
+            while (crl = CertEnumCRLsInStore(systemStore, crl))
             {
                 // could fail, keep reading next
                 if (crl->dwCertEncodingType == X509_ASN_ENCODING)
@@ -47,7 +48,7 @@ namespace TLS
             }
         }
 
-        if (!CertCloseStore(store, 0))
+        if (!CertCloseStore(systemStore, 0))
             printf("ERROR on close Windows certificate store: %s\n", Platform::SocketUtils::getLastErrorMessage().c_str());
 
         return true;

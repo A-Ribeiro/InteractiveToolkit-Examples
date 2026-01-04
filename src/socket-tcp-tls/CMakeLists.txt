@@ -18,3 +18,8 @@ target_link_libraries( ${PROJECT_NAME}
     mbedtls-all
 )
 
+# SystemCertificates on Windows
+if(WIN32)
+    target_link_libraries(${PROJECT_NAME} Crypt32)
+endif()
+

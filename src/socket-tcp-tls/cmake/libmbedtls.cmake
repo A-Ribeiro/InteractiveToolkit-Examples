@@ -10,7 +10,7 @@ set_property(CACHE LIB_MBEDTLS PROPERTY STRINGS None TryFindPackageFirst UsingFi
 tool_append_if_not_exists_and_make_global(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake-modules")
 
 if(LIB_MBEDTLS STREQUAL TryFindPackageFirst)
-    find_package(MbedTLS COMPONENTS mbedtls tfpsacrypto mbedx509 REQUIRED)
+    find_package(MbedTLS COMPONENTS mbedtls tfpsacrypto mbedx509 QUIET)
     if (MBEDTLS_FOUND)
         message(STATUS "[LIB_MBEDTLS] using system lib.")
         set(LIB_MBEDTLS UsingFindPackage)
@@ -22,9 +22,12 @@ endif()
 
 if(LIB_MBEDTLS STREQUAL FromSource)
 
-    # message(STATUS "")
-    # message(STATUS "BUILDING MBEDTLS FROM SOURCE")
-    # message(STATUS "")
+    message(STATUS "")
+    message(STATUS "BUILDING MBEDTLS FROM SOURCE")
+    message(STATUS "")
+    message(STATUS "run: pip3 install jsonschema jinja2")
+
+    
     
     tool_download_git_package("https://github.com/Mbed-TLS/mbedtls.git" mbedtls)
 
