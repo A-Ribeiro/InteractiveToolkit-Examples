@@ -22,5 +22,7 @@ if(WIN32)
     # SystemCertificates on Windows
     target_link_libraries(${PROJECT_NAME} Crypt32)
 elseif(APPLE)
-    target_link_libraries(${PROJECT_NAME} Security CoreFoundation)
+    find_library(SECURITY_FRAMEWORK Security)
+    find_library(COREFRAMEWORK_FRAMEWORK CoreFoundation)
+    target_link_libraries(${PROJECT_NAME} ${SECURITY_FRAMEWORK} ${COREFRAMEWORK_FRAMEWORK})
 endif()
