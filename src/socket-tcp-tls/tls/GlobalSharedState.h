@@ -5,12 +5,12 @@
 #include <mbedtls/threading.h>
 
 #if (MBEDTLS_VERSION_MAJOR < 4)
-// #include <mbedtls/ctr_drbg.h>
-// #include <mbedtls/entropy.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
 // #include <mbedtls/mbedtls_config.h>
 #else
 // #include <mbedtls/threading.h>
-//#include <psa/crypto_config.h>
+// #include <psa/crypto_config.h>
 #endif
 
 // #include <mbedtls/error.h>
@@ -25,7 +25,7 @@ namespace TLS
 #endif
 
     // custom threading implementation
-    class CustomGlobalThreading
+    class GlobalSharedState
     {
 
 #if !defined(MBEDTLS_THREADING_C)
@@ -51,11 +51,16 @@ namespace TLS
 #error "Missing Mbed TLS threading implementation (check your build flags)"
 #endif
 
-        CustomGlobalThreading();
+        GlobalSharedState();
 
     public:
-        ~CustomGlobalThreading();
+#if (MBEDTLS_VERSION_MAJOR < 4)
+        mbedtls_entropy_context entropyContext;
+        mbedtls_ctr_drbg_context ctrDrbgContext;
+#endif
 
-        static void InitializeBeforeAnyTLSCommand();
+        ~GlobalSharedState();
+
+        static GlobalSharedState *Instance();
     };
 }
