@@ -62,5 +62,6 @@ namespace TLS
         ~GlobalSharedState();
 
         static GlobalSharedState *Instance();
+        static void staticInitialization();
     };
 }

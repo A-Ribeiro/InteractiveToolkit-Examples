@@ -178,4 +178,9 @@ namespace TLS
         static GlobalSharedState instance;
         return &instance;
     }
+
+    void GlobalSharedState::staticInitialization()
+    {
+        GlobalSharedState::Instance();
+    }
 }

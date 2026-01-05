@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
     Path::setWorkingPath(Path::getExecutablePath(argv[0]));
     Platform::ThreadDataSet::Instance()->setGlobalThreadPriority(Platform::ThreadPriority::Normal);
     Platform::Thread::staticInitialization();
-    TLS::GlobalSharedState::Instance();
+    TLS::GlobalSharedState::staticInitialization();
 
     Platform::Signal::Set([](int sngl)
                           {
