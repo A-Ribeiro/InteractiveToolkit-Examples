@@ -38,8 +38,8 @@ namespace TLS
     bool CertificateChain::addCertificate(const uint8_t *data, size_t length, bool add_all_certificates_is_required)
     {
         initialize_structures();
-        std::string dataStr((const char *)data);
-        int result = mbedtls_x509_crt_parse(&x509_crt, (const unsigned char *)dataStr.c_str(), dataStr.length() + 1);
+        std::string dataStr((const char *)data, length);
+        int result = mbedtls_x509_crt_parse(&x509_crt, (const unsigned char *)dataStr.c_str(), strlen(dataStr.c_str()) + 1);
         if (result < 0)
             printf("Failed to add certificate: %s\n", TLS::TLSUtils::errorMessageFromReturnCode(result).c_str());
         if (add_all_certificates_is_required)
@@ -54,8 +54,8 @@ namespace TLS
     bool CertificateChain::addCertificateRevokationList(const uint8_t *data, size_t length, bool add_all_crl_is_required)
     {
         initialize_structures();
-        std::string dataStr((const char *)data);
-        int result = mbedtls_x509_crl_parse(&x509_crl, (const unsigned char *)dataStr.c_str(), dataStr.length() + 1);
+        std::string dataStr((const char *)data, length);
+        int result = mbedtls_x509_crl_parse(&x509_crl, (const unsigned char *)dataStr.c_str(), strlen(dataStr.c_str()) + 1);
         if (result < 0)
             printf("Failed to add certificate: %s\n", TLS::TLSUtils::errorMessageFromReturnCode(result).c_str());
         if (add_all_crl_is_required)
