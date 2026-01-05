@@ -38,26 +38,40 @@ if(LIB_MBEDTLS STREQUAL FromSource)
     # - crypto_config.h (for version >= 4)
     if(EXISTS "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/psa/crypto_config.h")
         file(READ "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/psa/crypto_config.h" MBEDTLS_CONFIG_CONTENTS)
+        set(MBEDTLS_CONFIG_CONTENTS_BEFORE "${MBEDTLS_CONFIG_CONTENTS}")
+        
         string(REPLACE "//#define MBEDTLS_DEPRECATED_REMOVED" "#define MBEDTLS_DEPRECATED_REMOVED" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
         string(REPLACE "//#define MBEDTLS_CHECK_RETURN_WARNING" "#define MBEDTLS_CHECK_RETURN_WARNING" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
         string(REPLACE "//#define MBEDTLS_THREADING_ALT" "#define MBEDTLS_THREADING_ALT" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
         string(REPLACE "//#define MBEDTLS_THREADING_C" "#define MBEDTLS_THREADING_C" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
-        file(WRITE "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/psa/crypto_config.h" "${MBEDTLS_CONFIG_CONTENTS}")
+        
+        if (NOT MBEDTLS_CONFIG_CONTENTS_BEFORE STREQUAL MBEDTLS_CONFIG_CONTENTS)
+            file(WRITE "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/psa/crypto_config.h" "${MBEDTLS_CONFIG_CONTENTS}")
+        endif()
 
         # - threading_alt.h
-        file(WRITE "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/mbedtls/threading_alt.h" "#ifndef __custom_threading_alt_h__\n#define __custom_threading_alt_h__\ntypedef void* mbedtls_platform_mutex_t;\ntypedef void* mbedtls_platform_condition_variable_t;\n#endif\n")
+        if(NOT EXISTS "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/mbedtls/threading_alt.h")
+            file(WRITE "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/mbedtls/threading_alt.h" "#ifndef __custom_threading_alt_h__\n#define __custom_threading_alt_h__\ntypedef void* mbedtls_platform_mutex_t;\ntypedef void* mbedtls_platform_condition_variable_t;\n#endif\n")
+        endif()
     else()
         # - mbedtls_config.h (for version < 4)
         if(EXISTS "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/mbedtls_config.h")
             file(READ "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/mbedtls_config.h" MBEDTLS_CONFIG_CONTENTS)
+            set(MBEDTLS_CONFIG_CONTENTS_BEFORE "${MBEDTLS_CONFIG_CONTENTS}")
+
             string(REPLACE "//#define MBEDTLS_DEPRECATED_REMOVED" "#define MBEDTLS_DEPRECATED_REMOVED" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
             string(REPLACE "//#define MBEDTLS_CHECK_RETURN_WARNING" "#define MBEDTLS_CHECK_RETURN_WARNING" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
             string(REPLACE "//#define MBEDTLS_THREADING_ALT" "#define MBEDTLS_THREADING_ALT" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
             string(REPLACE "//#define MBEDTLS_THREADING_C" "#define MBEDTLS_THREADING_C" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
-            file(WRITE "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/mbedtls_config.h" "${MBEDTLS_CONFIG_CONTENTS}")
+
+            if (NOT MBEDTLS_CONFIG_CONTENTS_BEFORE STREQUAL MBEDTLS_CONFIG_CONTENTS)
+                file(WRITE "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/mbedtls_config.h" "${MBEDTLS_CONFIG_CONTENTS}")
+            endif()
         
             # - threading_alt.h
-            file(WRITE "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/threading_alt.h" "#ifndef __custom_threading_alt_h__\n#define __custom_threading_alt_h__\ntypedef void* mbedtls_threading_mutex_t;\n#endif\n")
+            if(NOT EXISTS "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/threading_alt.h")
+                file(WRITE "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/threading_alt.h" "#ifndef __custom_threading_alt_h__\n#define __custom_threading_alt_h__\ntypedef void* mbedtls_threading_mutex_t;\n#endif\n")
+            endif()
         endif()
     endif()
 
