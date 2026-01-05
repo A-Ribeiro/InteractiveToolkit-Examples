@@ -26,10 +26,41 @@ if(LIB_MBEDTLS STREQUAL FromSource)
     message(STATUS "BUILDING MBEDTLS FROM SOURCE")
     message(STATUS "")
     message(STATUS "run: pip3 install jsonschema jinja2")
+    message(STATUS "")
 
     
     
     tool_download_git_package("https://github.com/Mbed-TLS/mbedtls.git" mbedtls)
+
+    # Mbed TLS Config Patch
+    tool_get_dirs(mbedtls_DOWNLOADED_PATH mbedtls_BINARY_PATH mbedtls)
+
+    # - crypto_config.h (for version >= 4)
+    if(EXISTS "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/psa/crypto_config.h")
+        file(READ "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/psa/crypto_config.h" MBEDTLS_CONFIG_CONTENTS)
+        string(REPLACE "//#define MBEDTLS_DEPRECATED_REMOVED" "#define MBEDTLS_DEPRECATED_REMOVED" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
+        string(REPLACE "//#define MBEDTLS_CHECK_RETURN_WARNING" "#define MBEDTLS_CHECK_RETURN_WARNING" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
+        string(REPLACE "//#define MBEDTLS_THREADING_ALT" "#define MBEDTLS_THREADING_ALT" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
+        string(REPLACE "//#define MBEDTLS_THREADING_C" "#define MBEDTLS_THREADING_C" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
+        file(WRITE "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/psa/crypto_config.h" "${MBEDTLS_CONFIG_CONTENTS}")
+
+        # - threading_alt.h
+        file(WRITE "${mbedtls_DOWNLOADED_PATH}/tf-psa-crypto/include/mbedtls/threading_alt.h" "#ifndef __custom_threading_alt_h__\n#define __custom_threading_alt_h__\ntypedef void* mbedtls_platform_mutex_t;\ntypedef void* mbedtls_platform_condition_variable_t;\n#endif\n")
+    else()
+        # - mbedtls_config.h (for version < 4)
+        if(EXISTS "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/mbedtls_config.h")
+            file(READ "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/mbedtls_config.h" MBEDTLS_CONFIG_CONTENTS)
+            string(REPLACE "//#define MBEDTLS_DEPRECATED_REMOVED" "#define MBEDTLS_DEPRECATED_REMOVED" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
+            string(REPLACE "//#define MBEDTLS_CHECK_RETURN_WARNING" "#define MBEDTLS_CHECK_RETURN_WARNING" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
+            string(REPLACE "//#define MBEDTLS_THREADING_ALT" "#define MBEDTLS_THREADING_ALT" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
+            string(REPLACE "//#define MBEDTLS_THREADING_C" "#define MBEDTLS_THREADING_C" MBEDTLS_CONFIG_CONTENTS "${MBEDTLS_CONFIG_CONTENTS}")
+            file(WRITE "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/mbedtls_config.h" "${MBEDTLS_CONFIG_CONTENTS}")
+        
+            # - threading_alt.h
+            file(WRITE "${mbedtls_DOWNLOADED_PATH}/include/mbedtls/threading_alt.h" "#ifndef __custom_threading_alt_h__\n#define __custom_threading_alt_h__\ntypedef void* mbedtls_threading_mutex_t;\n#endif\n")
+        endif()
+    endif()
+
 
     option(ENABLE_TESTING "Build Mbed TLS tests." OFF)
     option(USE_STATIC_MBEDTLS_LIBRARY "Build Mbed TLS static library." ON)
@@ -40,7 +71,9 @@ if(LIB_MBEDTLS STREQUAL FromSource)
 
     option(USE_STATIC_TF_PSA_CRYPTO_LIBRARY "Build TF-PSA-Crypto static library." ON)
     option(USE_SHARED_TF_PSA_CRYPTO_LIBRARY "Build TF-PSA-Crypto shared library." OFF)
+    if (WIN32)
     option(MSVC_STATIC_RUNTIME "Build the libraries with /MT compiler flag" ON)
+    endif()
     
     # Enable GEN_FILES on Windows to generate required files like psa_crypto_driver_wrappers_no_static.c
     option(GEN_FILES "Generate the auto-generated files as needed" ON)
@@ -50,13 +83,13 @@ if(LIB_MBEDTLS STREQUAL FromSource)
     tool_include_lib(mbedtls)
 
     if (TARGET builtin)
-        target_compile_definitions(builtin PUBLIC -DMBEDTLS_STATIC)
+        # target_compile_definitions(builtin PUBLIC -DMBEDTLS_STATIC)
         set_target_properties(builtin PROPERTIES FOLDER "LIBS/MBEDTLS")
         set_target_properties(builtin PROPERTIES CXX_STANDARD 11)
     endif()
 
     if (TARGET everest)
-        target_compile_definitions(everest PUBLIC -DMBEDTLS_STATIC)
+        # target_compile_definitions(everest PUBLIC -DMBEDTLS_STATIC)
         set_target_properties(everest PROPERTIES FOLDER "LIBS/MBEDTLS")
         set_target_properties(everest PROPERTIES CXX_STANDARD 11)
     endif()
@@ -99,25 +132,25 @@ if(LIB_MBEDTLS STREQUAL FromSource)
 
 
     if (TARGET mbedtls)
-        target_compile_definitions(mbedtls PUBLIC -DMBEDTLS_STATIC)
+        # target_compile_definitions(mbedtls PUBLIC -DMBEDTLS_STATIC)
         set_target_properties(mbedtls PROPERTIES FOLDER "LIBS/MBEDTLS")
         set_target_properties(mbedtls PROPERTIES CXX_STANDARD 11)
     endif()
 
     if (TARGET mbedx509)
-        target_compile_definitions(mbedx509 PUBLIC -DMBEDTLS_STATIC)
+        # target_compile_definitions(mbedx509 PUBLIC -DMBEDTLS_STATIC)
         set_target_properties(mbedx509 PROPERTIES FOLDER "LIBS/MBEDTLS")
         set_target_properties(mbedx509 PROPERTIES CXX_STANDARD 11)
     endif()
 
     if (TARGET p256-m)
-        target_compile_definitions(p256-m PUBLIC -DMBEDTLS_STATIC)
+        # target_compile_definitions(p256-m PUBLIC -DMBEDTLS_STATIC)
         set_target_properties(p256-m PROPERTIES FOLDER "LIBS/MBEDTLS")
         set_target_properties(p256-m PROPERTIES CXX_STANDARD 11)
     endif()
     
     if (TARGET tfpsacrypto)
-        target_compile_definitions(tfpsacrypto PUBLIC -DMBEDTLS_STATIC)
+        # target_compile_definitions(tfpsacrypto PUBLIC -DMBEDTLS_STATIC)
         set_target_properties(tfpsacrypto PROPERTIES FOLDER "LIBS/MBEDTLS")
         set_target_properties(tfpsacrypto PROPERTIES CXX_STANDARD 11)
     endif()

@@ -280,11 +280,14 @@ void start_server()
     threads.clear();
 }
 #include "tls/SystemCertificates.h"
+#include "tls/CustomGlobalThreading.h"
+
 int main(int argc, char *argv[])
 {
     Path::setWorkingPath(Path::getExecutablePath(argv[0]));
     Platform::ThreadDataSet::Instance()->setGlobalThreadPriority(Platform::ThreadPriority::Normal);
     Platform::Thread::staticInitialization();
+    TLS::CustomGlobalThreading::InitializeBeforeAnyTLSCommand();
 
     Platform::Signal::Set([](int sngl)
                           {
