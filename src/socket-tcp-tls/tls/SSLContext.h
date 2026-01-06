@@ -47,6 +47,19 @@ namespace TLS
 
         void communicateWithThisSocket(Platform::SocketTCP *socket);
 
+        bool doHandshake();
+
+        void close();
+
+        std::string getUsedCiphersuite() const;
+
+        bool write_buffer(const uint8_t *data, uint32_t size, uint32_t *write_feedback);
+        bool read_buffer(uint8_t *data, uint32_t size, uint32_t *read_feedback);
+
+
+
+
+
         TLS_DECLARE_CREATE_SHARED(SSLContext)
     };
 }

@@ -3,6 +3,13 @@
 
 #include <InteractiveToolkit/Platform/SocketTCP.h>
 
+// compatible layer with different Mbed TLS versions
+#ifndef MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET
+#define MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET 0
+#endif
+
+#include <mbedtls/net_sockets.h>
+
 namespace TLS
 {
 
@@ -156,13 +163,18 @@ namespace TLS
 
         mbedtls_ssl_set_bio(
             &ssl_context,
-            &socket,
+            socket,
             [](void *context, const unsigned char *data, std::size_t size) -> int
             {
                 Platform::SocketTCP *tcp_socket = static_cast<Platform::SocketTCP *>(context);
                 uint32_t write_feedback;
                 if (!tcp_socket->write_buffer(data, size, &write_feedback))
-                    return MBEDTLS_ERR_SSL_WANT_WRITE;
+                {
+                    if (tcp_socket->isClosed())
+                        return MBEDTLS_ERR_NET_CONN_RESET;
+                    else
+                        return MBEDTLS_ERR_SSL_WANT_WRITE;
+                }
                 return (int)write_feedback;
             },
             [](void *context, unsigned char *data, std::size_t size) -> int
@@ -171,7 +183,12 @@ namespace TLS
                 uint32_t read_feedback;
                 tcp_socket->setReadTimeout(0);
                 if (!tcp_socket->read_buffer(data, size, &read_feedback))
-                    return MBEDTLS_ERR_SSL_WANT_READ;
+                {
+                    if (tcp_socket->isClosed())
+                        return MBEDTLS_ERR_NET_CONN_RESET;
+                    else
+                        return MBEDTLS_ERR_SSL_WANT_READ;
+                }
                 return (int)read_feedback;
             },
             [](void *context, unsigned char *data, std::size_t size, uint32_t timeout_ms) -> int
@@ -181,12 +198,195 @@ namespace TLS
                 tcp_socket->setReadTimeout(timeout_ms);
                 if (!tcp_socket->read_buffer(data, size, &read_feedback))
                 {
-                    if (tcp_socket->isReadTimedout())
+                    if (tcp_socket->isClosed())
+                        return MBEDTLS_ERR_NET_CONN_RESET;
+                    else if (tcp_socket->isReadTimedout())
                         return MBEDTLS_ERR_SSL_TIMEOUT;
-                    return MBEDTLS_ERR_SSL_WANT_READ;
+                    else
+                        return MBEDTLS_ERR_SSL_WANT_READ;
                 }
                 return (int)read_feedback;
             });
     }
 
+    bool SSLContext::doHandshake()
+    {
+        if (this->handshake_done)
+            return true;
+        if (this->certificate_chain == nullptr)
+            return false;
+
+        int result;
+        bool should_retry;
+
+        do
+        {
+            result = mbedtls_ssl_handshake(&ssl_context);
+            should_retry = result < 0 &&
+                           (result == MBEDTLS_ERR_SSL_WANT_READ ||
+                            result == MBEDTLS_ERR_SSL_WANT_WRITE ||
+                            result == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
+                            result == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS ||
+                            // result == MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA ||
+                            result == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET);
+            // if (result == MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA)
+            //     mbedtls_ssl_read_early_data(&ssl_context, ...);
+            if (should_retry)
+                Platform::Sleep::millis(5);
+        } while (should_retry);
+
+        if (result != 0)
+        {
+            printf("Error during TLS handshake: %s\n", TLSUtils::errorMessageFromReturnCode(result).c_str());
+
+            // print verification errors
+            if (result == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED)
+            {
+                auto verifyResult = mbedtls_ssl_get_verify_result(&ssl_context);
+                std::string errors;
+
+#define X509_CRT_ERROR_INFO(error_code, error_code_str, human_readable_string) \
+    if (verifyResult & error_code)                                             \
+        errors += " - " human_readable_string "\n";
+                MBEDTLS_X509_CRT_ERROR_INFO_LIST
+#undef X509_CRT_ERROR_INFO
+
+                if (!errors.empty())
+                    errors.resize(errors.size() - 1);
+                printf("TLS certificate verification failed:\n%s\n", errors.c_str());
+            }
+
+            release_structures();
+            return false;
+        }
+
+        handshake_done = true;
+        return true;
+    }
+
+    void SSLContext::close()
+    {
+        if (!this->handshake_done)
+            return;
+
+        int result = mbedtls_ssl_close_notify(&ssl_context);
+
+        if (result != 0)
+        {
+            if (result != MBEDTLS_ERR_SSL_WANT_READ &&
+                result != MBEDTLS_ERR_SSL_WANT_WRITE &&
+                result != MBEDTLS_ERR_NET_CONN_RESET)
+                printf("Failed to notify TLS peer about connection close: %s\n", TLSUtils::errorMessageFromReturnCode(result).c_str());
+        }
+
+        release_structures();
+    }
+
+    std::string SSLContext::getUsedCiphersuite() const
+    {
+        if (!this->handshake_done)
+            return "";
+        const char *cipersuiteName = mbedtls_ssl_get_ciphersuite(&ssl_context);
+        if (cipersuiteName)
+            return cipersuiteName;
+        return "";
+    }
+
+    bool SSLContext::write_buffer(const uint8_t *data, uint32_t size, uint32_t *write_feedback)
+    {
+        if (!this->handshake_done)
+            return false;
+
+        int result;
+        bool should_retry;
+
+        uint32_t current_pos = 0;
+        *write_feedback = current_pos;
+
+        while (current_pos < size)
+        {
+            do
+            {
+                result = mbedtls_ssl_write(&ssl_context,
+                                           (const unsigned char *)&data[current_pos],
+                                           size - current_pos);
+                should_retry = result < 0 &&
+                               (result == MBEDTLS_ERR_SSL_WANT_READ ||
+                                result == MBEDTLS_ERR_SSL_WANT_WRITE ||
+                                result == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
+                                result == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET ||
+                                result == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS // ||
+                                                                             // result == MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA
+                               );
+                // if (result == MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA)
+                //     mbedtls_ssl_read_early_data(&ssl_context, ...);
+                if (should_retry)
+                    Platform::Sleep::millis(5);
+            } while (should_retry);
+
+            if (result < 0)
+            {
+                printf("Error writing TLS data: %s\n", TLSUtils::errorMessageFromReturnCode(result).c_str());
+                release_structures();
+                return false;
+            }
+            else if (result == 0 || result == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || result == MBEDTLS_ERR_NET_CONN_RESET)
+            {
+                // connection was closed
+                printf("TLS connection was closed during write.\n");
+                release_structures();
+                return false;
+            }
+
+            current_pos += (uint32_t)result;
+            *write_feedback = current_pos;
+        }
+
+        return true;
+    }
+
+    bool SSLContext::read_buffer(uint8_t *data, uint32_t size, uint32_t *read_feedback)
+    {
+        if (!this->handshake_done)
+            return false;
+
+        *read_feedback = 0;
+
+        int result;
+        bool should_retry;
+
+        do
+        {
+            result = mbedtls_ssl_read(&ssl_context, (unsigned char *)data, size);
+            should_retry = result < 0 &&
+                           (result == MBEDTLS_ERR_SSL_WANT_READ ||
+                            result == MBEDTLS_ERR_SSL_WANT_WRITE ||
+                            result == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
+                            result == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET ||
+                            result == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS // ||
+                                                                         // result == MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA
+                           );
+            // if (result == MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA)
+            //     mbedtls_ssl_read_early_data(&ssl_context, ...);
+            if (should_retry)
+                Platform::Sleep::millis(5);
+        } while (should_retry);
+
+        if (result == 0 || result == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || result == MBEDTLS_ERR_NET_CONN_RESET)
+        {
+            printf("TLS connection was closed during read.\n");
+            release_structures();
+            return false;
+        }
+        else if (result < 0)
+        {
+            printf("Error reading TLS data: %s\n", TLSUtils::errorMessageFromReturnCode(result).c_str());
+            release_structures();
+            return false;
+        }
+
+        *read_feedback = (uint32_t)result;
+
+        return true;
+    }
 }
