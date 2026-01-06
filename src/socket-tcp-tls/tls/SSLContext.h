@@ -3,31 +3,50 @@
 #include "PrivateKey.h"
 #include "CertificateChain.h"
 
-// #include <InteractiveToolkit/Platform/SocketTCP.h>
-// #include <InteractiveToolkit/EventCore/Callback.h>
-
 // #include <mbedtls/error.h>
 // #include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 
-// #include <InteractiveToolkit/EventCore/Callback.h>
-// #include <InteractiveToolkit/Platform/Core/ObjectBuffer.h>
+#include <InteractiveToolkit/EventCore/Callback.h>
 
+namespace Platform
+{
+    class SocketTCP;
+}
+
+#include "TLSUtils.h"
 
 namespace TLS
 {
     class SSLContext
     {
         bool initialized;
+
     public:
+        bool is_client;
+        bool is_server;
+
+        std::shared_ptr<PrivateKey> private_key;
+        std::shared_ptr<CertificateChain> certificate_chain;
+
         bool handshake_done;
+
         mbedtls_ssl_context ssl_context;
         mbedtls_ssl_config ssl_config;
 
-        // for server
-        PrivateKey private_key;
+        bool isInitialized() const;
 
-        // for server and client
-        CertificateChain certificate_chain;
+        void initialize_structures();
+        void release_structures();
+
+        SSLContext();
+        ~SSLContext();
+
+        bool setupAsClient(std::shared_ptr<CertificateChain> &certificate_chain, const char* hostname, bool verify_peer = true);
+        bool setupAsServer(std::shared_ptr<CertificateChain> &certificate_chain, std::shared_ptr<PrivateKey> &private_key, bool verify_peer = false);
+
+        void communicateWithThisSocket(Platform::SocketTCP *socket);
+
+        TLS_DECLARE_CREATE_SHARED(SSLContext)
     };
 }

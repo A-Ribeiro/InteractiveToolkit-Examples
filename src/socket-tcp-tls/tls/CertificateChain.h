@@ -1,11 +1,10 @@
 #pragma once
 
-// #include <mbedtls/error.h>
-// #include <mbedtls/ssl.h>
-
 #include <mbedtls/x509.h>
 #include <mbedtls/x509_crt.h>
 #include <mbedtls/x509_crl.h>
+
+#include "TLSUtils.h"
 
 namespace TLS
 {
@@ -13,6 +12,8 @@ namespace TLS
     class CertificateChain
     {
         bool initialized;
+
+        CertificateChain();
     public:
 
         mbedtls_x509_crt x509_crt;
@@ -23,7 +24,6 @@ namespace TLS
         void initialize_structures();
         void release_structures();
 
-        CertificateChain();
         ~CertificateChain();
 
         bool addCertificate(const uint8_t* data, size_t length, bool add_all_certificates_is_required = true);
@@ -34,6 +34,8 @@ namespace TLS
         
         bool addSystemCertificates(bool add_all_certificates_is_required = false,
                                    bool add_all_crl_is_required = false);
+
+        TLS_DECLARE_CREATE_SHARED(CertificateChain)
 
     };
 
