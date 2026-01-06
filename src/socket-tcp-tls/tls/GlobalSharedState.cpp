@@ -144,12 +144,12 @@ namespace TLS
 
 #if (MBEDTLS_VERSION_MAJOR < 4)
         // crypto library init before or equal 3.x.x
-        mbedtls_entropy_init(&entropyContext);
-        mbedtls_ctr_drbg_init(&ctrDrbgContext);
+        mbedtls_entropy_init(&entropy_context);
+        mbedtls_ctr_drbg_init(&ctr_drbg_context);
 
-        int result = mbedtls_ctr_drbg_seed(&ctrDrbgContext,
+        int result = mbedtls_ctr_drbg_seed(&ctr_drbg_context,
                                            mbedtls_entropy_func,
-                                           &entropyContext,
+                                           &entropy_context,
                                            "-mbedtls-" MBEDTLS_VERSION_STRING_FULL,
                                            strlen("-mbedtls-" MBEDTLS_VERSION_STRING_FULL));
 
@@ -164,8 +164,8 @@ namespace TLS
     GlobalSharedState::~GlobalSharedState()
     {
 #if (MBEDTLS_VERSION_MAJOR < 4)
-        mbedtls_ctr_drbg_free(&ctrDrbgContext);
-        mbedtls_entropy_free(&entropyContext);
+        mbedtls_ctr_drbg_free(&ctr_drbg_context);
+        mbedtls_entropy_free(&entropy_context);
 #endif
 
 #if defined(MBEDTLS_THREADING_ALT)

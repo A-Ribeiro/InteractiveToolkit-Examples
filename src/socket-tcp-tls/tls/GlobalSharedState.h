@@ -55,8 +55,8 @@ namespace TLS
 
     public:
 #if (MBEDTLS_VERSION_MAJOR < 4)
-        mbedtls_entropy_context entropyContext;
-        mbedtls_ctr_drbg_context ctrDrbgContext;
+        mbedtls_entropy_context entropy_context;
+        mbedtls_ctr_drbg_context ctr_drbg_context;
 #endif
 
         ~GlobalSharedState();

@@ -7,6 +7,11 @@
 namespace TLS
 {
 
+    bool CertificateChain::isInitialized() const
+    {
+        return initialized;
+    }
+
     void CertificateChain::initialize_structures()
     {
         if (!initialized)

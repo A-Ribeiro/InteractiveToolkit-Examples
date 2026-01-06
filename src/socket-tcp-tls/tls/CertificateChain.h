@@ -18,6 +18,8 @@ namespace TLS
         mbedtls_x509_crt x509_crt;
         mbedtls_x509_crl x509_crl;
 
+        bool isInitialized() const;
+
         void initialize_structures();
         void release_structures();
 
