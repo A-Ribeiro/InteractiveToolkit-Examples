@@ -208,8 +208,23 @@ namespace ITKExtension
             return true;
         }
 
-        HTTP &HTTP::setBody(std::string body,
-                            std::string content_type)
+        HTTP &HTTP::setHeader(const std::string &key,
+                              const std::string &value)
+        {
+            std::string key_copy;
+            key_copy.resize(key.length());
+            for (int i = 0; i < (int)key.length(); i++)
+                key_copy[i] = (!is_valid_header_character(key[i])) ? ' ' : key[i];
+            std::string value_copy;
+            value_copy.resize(value.length());
+            for (int i = 0; i < (int)value.length(); i++)
+                value_copy[i] = (!is_valid_header_character(value[i])) ? ' ' : value[i];
+            headers[key_copy] = value_copy;
+            return *this;
+        }
+
+        HTTP &HTTP::setBody(const std::string &body,
+                            const std::string &content_type)
         {
             if (body.size() > 0)
             {
@@ -226,7 +241,7 @@ namespace ITKExtension
         }
 
         HTTP &HTTP::setBody(const uint8_t *body, uint32_t body_size,
-                            std::string content_type)
+                            const std::string &content_type)
         {
             if (body_size > 0)
             {

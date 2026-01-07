@@ -39,12 +39,15 @@ namespace ITKExtension
 
             bool writeToStream(Platform::SocketTCP *socket);
 
-            HTTP &setBody(std::string body = "",
-                          std::string content_type = "text/plain");
+            HTTP &setHeader(const std::string &key,
+                            const std::string &value);
+
+            HTTP &setBody(const std::string &body = "",
+                          const std::string &content_type = "text/plain");
 
             HTTP &setBody(const uint8_t *body, uint32_t body_size,
-                          std::string content_type = "application/octet-stream");
-            
+                          const std::string &content_type = "application/octet-stream");
+
             std::string bodyAsString() const;
         };
 

@@ -59,31 +59,30 @@ void connect(const std::string addr_ipv4)
 
 void start_server()
 {
-    printf("start server\n");
-
-    Platform::SocketTCPAccept serverSocket(
-        true, // blocking
-        true, // reuseAddress
-        true  // noDelay
-    );
+    // blocking: true, reuseAddress: true, noDelay: true
+    Platform::SocketTCPAccept serverSocket(true, true, true);
 
     if (!serverSocket.bindAndListen(
             "INADDR_ANY", // interface address
             8444,         // port
-            10            // input queue
-            ))
+            10))          // input queue
     {
         printf("Error to bind address\n");
         serverSocket.close();
         return;
     }
 
-    Platform::SocketTCP *clientSocket = new Platform::SocketTCP();
-    std::vector<Platform::Thread *> threads;
+    {
+        char server_str[32];
+        snprintf(server_str, 32, "%s:%u", inet_ntoa(serverSocket.getAddr().sin_addr), ntohs(serverSocket.getAddr().sin_port));
+        printf("server started at %s\n", server_str);
+    }
 
+    Platform::ThreadPool threadPool(std::max(Platform::Thread::QueryNumberOfSystemThreads(), 4));
+
+    Platform::SocketTCP *clientSocket = new Platform::SocketTCP();
     while (!Platform::Thread::isCurrentThreadInterrupted())
     {
-
         bool connection_accepted = true;
         // blocking mode
         if (!serverSocket.accept(clientSocket))
@@ -91,25 +90,18 @@ void start_server()
             if (serverSocket.isSignaled() || serverSocket.isClosed() || !serverSocket.isListening())
                 break;
             connection_accepted = false;
+            continue; // probably a thread interrupt was triggered... force while to check
         }
 
-        // clear deleted threads
-        for (int i = (int)threads.size() - 1; i >= 0; i--)
+        // if there are 200 or more tasks in the queue, refuse new connections
+        if (threadPool.taskInQueue() >= 200)
         {
-            if (!threads[i]->isAlive())
-            {
-                printf("removing closed thread...\n");
-                delete threads[i];
-                threads.erase(threads.begin() + i);
-            }
+            clientSocket->close();
+            continue;
         }
 
-        if (!connection_accepted)
-            continue;
-
-        Platform::Thread *aux;
-        threads.push_back(aux = new Platform::Thread([clientSocket]()
-                                                     {
+        threadPool.postTask([clientSocket]()
+                            {
             // client thread (server side)
             Platform::SocketTCP *socket = clientSocket;
             socket->setNoDelay(true);
@@ -120,150 +112,38 @@ void start_server()
             char client_str[32];
             snprintf(client_str, 32, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));
 
-            std::vector<char> line;
-            line.reserve(1024);
-            int max_http_header_lines = 100;
-
-            char input_buffer[1024] = {0};
-            uint32_t read_feedback;
-            uint32_t curr_reading;
-            bool found_crlf = false;
-
-            std::string requested_path;
-
-            while (!found_crlf) {
-
-                if (!socket->read_buffer((uint8_t*)input_buffer, sizeof(input_buffer), &read_feedback)) {
-                    if (socket->isReadTimedout()){
-
-                        printf("[%s] Read NO Headers timed out\n", client_str);
-                        socket->close();
-                        delete socket;
-
-                        return;
-                    } else {
-                        printf("[%s] Connection or thread interrupted with the read feedback: %u\n", client_str, read_feedback);
-                        socket->close();
-                        delete socket;
-                        return;
-                    }
-                }
-                // printf("[%s] receiving: \"%s\" size: %u bytes\n", client_str, input_buffer, read_feedback);
-
-
-                curr_reading = 0;
-                do {
-                    for(uint32_t i=curr_reading;i<read_feedback;i++) {
-                        line.push_back(input_buffer[i]);
-                        // printf("line: \"%s\"\n", std::string(line.begin(), line.end()).c_str());
-                        if (line.size() >= 1024 || input_buffer[i] == '\0'){
-                            printf("[%s] HTTP line too long: %u\n", client_str, (uint32_t)line.size());
-                            socket->close();
-                            delete socket;
-                            return;
-                        }
-                        if (line.size() >= 2 && line[line.size()-1] == '\n' && line[line.size()-2] == '\r')
-                            break;
-                    }
-
-                    found_crlf = line.size() == 2 && line[0] == '\r' && line[1] == '\n';
-
-                    curr_reading += (uint32_t)line.size();
-
-                    if (line.size() >= 2 && line[line.size()-2] == '\r' && line[line.size()-1] == '\n') {
-                        line.pop_back();
-                        line.pop_back();
-                    }
-
-                    std::string header = std::string(line.begin(), line.end());
-
-                    printf("[%s] header: \"%s\"\n", client_str, header.c_str());
-
-                    if (ITKCommon::StringUtil::startsWith(header, "GET")){
-                        auto parts = ITKCommon::StringUtil::tokenizer(header, " ");
-                        if (parts.size() == 3 && ITKCommon::StringUtil::startsWith(parts[2], "HTTP/"))
-                            requested_path = parts[1];
-                    }
-
-                    max_http_header_lines--;
-                    if (max_http_header_lines <= 0) {
-                        printf("[%s] Too many HTTP header lines readed...\n", client_str);
-                        socket->close();
-                        delete socket;
-                        return;
-                    }
-
-                    line.clear();
-                } while(!found_crlf && curr_reading < read_feedback);
+            ITKExtension::Network::HTTPRequest req;
+            if (!req.readFromStream(socket))
+            {
+                printf("Failed to read HTTP Request on %s\n", client_str);
+                socket->close();
+                delete socket;
+                return;
             }
 
+            ITKExtension::Network::HTTPResponse res;
 
-            //Platform::Sleep::millis(1000);
+            if (req.method == "GET" && req.path == "/")
+                res.setDefault(200)
+                    .setBody(
+                    "Hello! This is a response from the C++ TCP server.\nYour IP is: " + std::string(client_str),
+                    "text/plain");
+            else 
+                res.setDefault(404)
+                    .setBody(res.reason_phrase,"text/plain");
 
-            printf("[%s] writting response...\n", client_str);
-
-            uint32_t write_feedback;
-
-            if (requested_path.compare("/") != 0){
-                // not the / path... return not found
-                const char* not_found =
-                    "HTTP/1.1 404 Not Found\r\n"
-                    "Content-Type: text/plain\r\n"
-                    "Content-Length: 13\r\n"
-                    "\r\n"
-                    "404 Not Found";
-                socket->write_buffer(
-                    (uint8_t*)not_found,
-                    (uint32_t)strlen(not_found),
-                    &write_feedback
-                );
-            } else {
-
-                char HTTP_Headers[256];
-                char HTTP_Body[1024];
-
-                snprintf(HTTP_Body, 1024,
-                    "Your IP is: %s", client_str);
-
-                snprintf(HTTP_Headers, 256,
-                    "HTTP/1.1 200 OK\r\n"
-                    "Connection: close\r\n"
-                    "Content-Type: text/plain\r\n"
-                    "Content-Length: %i\r\n"
-                    "\r\n", (int)strlen(HTTP_Body));
-
-
-                socket->write_buffer(
-                    (uint8_t*)HTTP_Headers,
-                    (uint32_t)strlen(HTTP_Headers),
-                    &write_feedback
-                );
-                socket->write_buffer(
-                    (uint8_t*)HTTP_Body,
-                    (uint32_t)strlen(HTTP_Body),
-                    &write_feedback
-                );
-            }
+            res.writeToStream(socket);
 
             socket->close();
-            delete socket; }));
-
-        aux->start();
+            delete socket; });
 
         clientSocket = new Platform::SocketTCP();
     }
 
     serverSocket.close();
-
     delete clientSocket;
 
-    for (size_t i = 0; i < threads.size(); i++)
-    {
-        threads[i]->interrupt();
-        threads[i]->wait();
-        delete threads[i];
-    }
-    threads.clear();
+    threadPool.finish();
 }
 
 int main(int argc, char *argv[])
