@@ -4,13 +4,17 @@
 #include <iostream>
 #include <stdlib.h>
 
+#include "network/HTTPRequest.h"
+#include "network/HTTPResponse.h"
+
+#include "network/tls/GlobalSharedState.h"
+
 using namespace ITKCommon;
 
 void connect(const std::string addr_ipv4)
 {
     Platform::SocketTCP clientSocket;
 
-    printf("connecting...\n");
     if (!clientSocket.connect(addr_ipv4, 8444))
     {
         printf("Connect failed!!!... interrupting current thread\n");
@@ -18,56 +22,38 @@ void connect(const std::string addr_ipv4)
         return;
     }
 
-    printf("done.\n");
-
     clientSocket.setNoDelay(true);
     clientSocket.setWriteTimeout(500); // 500 ms write timeout
     // clientSocket.setReadTimeout(1500); // 1500 ms read timeout
 
-    const char *HTTP_GET_REQUEST =
-        "GET / HTTP/1.1\r\n"
-        "Connection: close\r\n"
-        "\r\n";
-
-    // Platform::Sleep::millis(10000); // wait a bit for client to send data
-    // while (1)
     {
-        printf("sending: \"HTTP_GET_REQUEST\" size: %u bytes\n", (uint32_t)strlen(HTTP_GET_REQUEST));
-        if (!clientSocket.write_buffer(
-                (uint8_t *)HTTP_GET_REQUEST,
-                (uint32_t)strlen(HTTP_GET_REQUEST)))
+        ITKExtension::Network::HTTPRequest req;
+        req.setDefault(addr_ipv4, "GET", "/");
+        if (!req.writeToStream(&clientSocket))
         {
-            if (clientSocket.isWriteTimedout())
-                printf("write timed out...\n");
-
-            printf("Failed to send handshake...\n");
+            printf("Failed to send HTTP Request...\n");
             clientSocket.close();
             return;
         }
     }
 
-    printf("receiving...\n");
-    char response[1024];
-    uint32_t read_feedback;
-    while (true)
     {
-        if (!clientSocket.read_buffer(
-                (uint8_t *)&response,
-                sizeof(response),
-                &read_feedback))
+        ITKExtension::Network::HTTPResponse res;
+        if (!res.readFromStream(&clientSocket))
         {
-            if (clientSocket.isReadTimedout())
-                printf("read timed out...\n");
-
-            printf("read end...read feedback: %u\n", read_feedback);
+            printf("Failed to read HTTP Response...\n");
             clientSocket.close();
             return;
         }
 
-        printf("receiving: \"%s\" size: %u bytes\n", std::string(response, read_feedback).c_str(), read_feedback);
+        printf("Received HTTP Response: %d %s\n", res.status_code, res.reason_phrase.c_str());
+        std::string content_type = res.headers["Content-Type"];
+        if (content_type == "text/plain")
+        {
+            printf("Body (%u bytes): %s\n", (uint32_t)res.body.size(), res.bodyAsString().c_str());
+        }
     }
 
-    printf("closing connection\n");
     clientSocket.close();
 }
 
@@ -279,8 +265,6 @@ void start_server()
     }
     threads.clear();
 }
-
-#include "tls/GlobalSharedState.h"
 
 int main(int argc, char *argv[])
 {

@@ -159,10 +159,10 @@ namespace TLS
         return true;
     }
 
-    void SSLContext::communicateWithThisSocket(Platform::SocketTCP *socket)
+    bool SSLContext::communicateWithThisSocket(Platform::SocketTCP *socket)
     {
         if (this->certificate_chain == nullptr)
-            return;
+            return false;
 
         mbedtls_ssl_set_bio(
             &ssl_context,
@@ -210,6 +210,7 @@ namespace TLS
                 }
                 return (int)read_feedback;
             });
+        return true;
     }
 
     bool SSLContext::doHandshake()

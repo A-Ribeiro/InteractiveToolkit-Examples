@@ -49,7 +49,7 @@ namespace TLS
         bool setupAsClient(std::shared_ptr<CertificateChain> &certificate_chain, const char *hostname_or_common_name, bool verify_peer = true);
         bool setupAsServer(std::shared_ptr<CertificateChain> &certificate_chain, std::shared_ptr<PrivateKey> &private_key, bool verify_peer = false);
 
-        void communicateWithThisSocket(Platform::SocketTCP *socket);
+        bool communicateWithThisSocket(Platform::SocketTCP *socket);
 
         bool doHandshake();
 
