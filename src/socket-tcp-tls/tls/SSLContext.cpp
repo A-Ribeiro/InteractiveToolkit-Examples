@@ -36,13 +36,14 @@ namespace TLS
             initialized = false;
             is_client = false;
             is_server = false;
+            // setup_called = false; // use as a global flag to the containing socket
             handshake_done = false;
             private_key = nullptr;
             certificate_chain = nullptr;
         }
     }
 
-    SSLContext::SSLContext() : initialized(false), is_client(false), is_server(false), handshake_done(false),
+    SSLContext::SSLContext() : initialized(false), is_client(false), is_server(false), setup_called(false), handshake_done(false),
                                private_key(nullptr), certificate_chain(nullptr), ssl_context{}, ssl_config{}
     {
     }
@@ -59,6 +60,7 @@ namespace TLS
         initialize_structures();
 
         is_client = true;
+        setup_called = true;
         this->certificate_chain = certificate_chain;
 
         int result = mbedtls_ssl_config_defaults(&ssl_config,
@@ -110,6 +112,7 @@ namespace TLS
         initialize_structures();
 
         is_server = true;
+        setup_called = true;
         this->certificate_chain = certificate_chain;
         this->private_key = private_key;
 
@@ -168,9 +171,9 @@ namespace TLS
             {
                 Platform::SocketTCP *tcp_socket = static_cast<Platform::SocketTCP *>(context);
                 uint32_t write_feedback;
-                if (!tcp_socket->write_buffer(data, size, &write_feedback))
+                if (!tcp_socket->Platform::SocketTCP::write_buffer(data, size, &write_feedback))
                 {
-                    if (tcp_socket->isClosed())
+                    if (tcp_socket->Platform::SocketTCP::isClosed())
                         return MBEDTLS_ERR_NET_CONN_RESET;
                     else
                         return MBEDTLS_ERR_SSL_WANT_WRITE;
@@ -181,10 +184,10 @@ namespace TLS
             {
                 Platform::SocketTCP *tcp_socket = static_cast<Platform::SocketTCP *>(context);
                 uint32_t read_feedback;
-                tcp_socket->setReadTimeout(0);
-                if (!tcp_socket->read_buffer(data, size, &read_feedback))
+                tcp_socket->Platform::SocketTCP::setReadTimeout(0);
+                if (!tcp_socket->Platform::SocketTCP::read_buffer(data, size, &read_feedback))
                 {
-                    if (tcp_socket->isClosed())
+                    if (tcp_socket->Platform::SocketTCP::isClosed())
                         return MBEDTLS_ERR_NET_CONN_RESET;
                     else
                         return MBEDTLS_ERR_SSL_WANT_READ;
@@ -195,12 +198,12 @@ namespace TLS
             {
                 Platform::SocketTCP *tcp_socket = static_cast<Platform::SocketTCP *>(context);
                 uint32_t read_feedback;
-                tcp_socket->setReadTimeout(timeout_ms);
-                if (!tcp_socket->read_buffer(data, size, &read_feedback))
+                tcp_socket->Platform::SocketTCP::setReadTimeout(timeout_ms);
+                if (!tcp_socket->Platform::SocketTCP::read_buffer(data, size, &read_feedback))
                 {
-                    if (tcp_socket->isClosed())
+                    if (tcp_socket->Platform::SocketTCP::isClosed())
                         return MBEDTLS_ERR_NET_CONN_RESET;
-                    else if (tcp_socket->isReadTimedout())
+                    else if (tcp_socket->Platform::SocketTCP::isReadTimedout())
                         return MBEDTLS_ERR_SSL_TIMEOUT;
                     else
                         return MBEDTLS_ERR_SSL_WANT_READ;
@@ -232,7 +235,7 @@ namespace TLS
             // if (result == MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA)
             //     mbedtls_ssl_read_early_data(&ssl_context, ...);
             if (should_retry)
-                Platform::Sleep::millis(5);
+                Platform::Sleep::millis(1);
         } while (should_retry);
 
         if (result != 0)
@@ -321,7 +324,7 @@ namespace TLS
                 // if (result == MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA)
                 //     mbedtls_ssl_read_early_data(&ssl_context, ...);
                 if (should_retry)
-                    Platform::Sleep::millis(5);
+                    Platform::Sleep::millis(1);
             } while (should_retry);
 
             if (result < 0)
@@ -369,7 +372,7 @@ namespace TLS
             // if (result == MBEDTLS_ERR_SSL_RECEIVED_EARLY_DATA)
             //     mbedtls_ssl_read_early_data(&ssl_context, ...);
             if (should_retry)
-                Platform::Sleep::millis(5);
+                Platform::Sleep::millis(1);
         } while (should_retry);
 
         if (result == 0 || result == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || result == MBEDTLS_ERR_NET_CONN_RESET)

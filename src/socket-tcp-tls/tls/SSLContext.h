@@ -26,6 +26,8 @@ namespace TLS
         bool is_client;
         bool is_server;
 
+        bool setup_called;
+
         std::shared_ptr<PrivateKey> private_key;
         std::shared_ptr<CertificateChain> certificate_chain;
 
