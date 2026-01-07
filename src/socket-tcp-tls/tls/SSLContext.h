@@ -42,7 +42,9 @@ namespace TLS
         SSLContext();
         ~SSLContext();
 
-        bool setupAsClient(std::shared_ptr<CertificateChain> &certificate_chain, const char* hostname, bool verify_peer = true);
+        // @param hostname_or_common_name: set the expected hostname for server certificate verification
+        //          - The Common Name (e.g. server FQDN or YOUR name) parameter of the server certificate
+        bool setupAsClient(std::shared_ptr<CertificateChain> &certificate_chain, const char *hostname_or_common_name, bool verify_peer = true);
         bool setupAsServer(std::shared_ptr<CertificateChain> &certificate_chain, std::shared_ptr<PrivateKey> &private_key, bool verify_peer = false);
 
         void communicateWithThisSocket(Platform::SocketTCP *socket);
@@ -55,10 +57,6 @@ namespace TLS
 
         bool write_buffer(const uint8_t *data, uint32_t size, uint32_t *write_feedback);
         bool read_buffer(uint8_t *data, uint32_t size, uint32_t *read_feedback);
-
-
-
-
 
         TLS_DECLARE_CREATE_SHARED(SSLContext)
     };

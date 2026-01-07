@@ -3,6 +3,10 @@
 #include <InteractiveToolkit/common.h>
 #include <InteractiveToolkit/ITKCommon/ITKAbort.h>
 
+#if (MBEDTLS_VERSION_MAJOR < 4)
+#include <InteractiveToolkit/ITKCommon/Date.h>
+#endif
+
 #include "TLSUtils.h"
 
 #if (MBEDTLS_VERSION_MAJOR >= 4)
@@ -144,15 +148,20 @@ namespace TLS
 
 #if (MBEDTLS_VERSION_MAJOR < 4)
         // crypto library init before or equal 3.x.x
+
+        std::string rng_curr_time_str = ITKCommon::PrintfToStdString(
+            "%s-%s",
+            "itkcommon-mbedtls-" MBEDTLS_VERSION_STRING_FULL,
+            ITKCommon::Date::NowUTC().toISOString().c_str());
+
         mbedtls_entropy_init(&entropy_context);
         mbedtls_ctr_drbg_init(&ctr_drbg_context);
 
         int result = mbedtls_ctr_drbg_seed(&ctr_drbg_context,
                                            mbedtls_entropy_func,
                                            &entropy_context,
-                                           "-mbedtls-" MBEDTLS_VERSION_STRING_FULL,
-                                           strlen("-mbedtls-" MBEDTLS_VERSION_STRING_FULL));
-
+                                           rng_curr_time_str.c_str(),
+                                           rng_curr_time_str.length());
         ITK_ABORT(result != 0, "Failed to seed DRBG: %s\n", errorMessageFromReturnCode(result).c_str());
 #else
         // crypto library init after or equal 4.x.x

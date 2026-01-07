@@ -52,7 +52,7 @@ namespace TLS
         release_structures();
     }
 
-    bool SSLContext::setupAsClient(std::shared_ptr<CertificateChain> &certificate_chain, const char *hostname, bool verify_peer)
+    bool SSLContext::setupAsClient(std::shared_ptr<CertificateChain> &certificate_chain, const char *hostname_or_common_name, bool verify_peer)
     {
         if (this->certificate_chain != nullptr)
             return false;
@@ -92,7 +92,7 @@ namespace TLS
 
         // Set the hostname that is used for peer verification and sent via SNI if it is supported
         // Only for clients
-        result = mbedtls_ssl_set_hostname(&ssl_context, hostname);
+        result = mbedtls_ssl_set_hostname(&ssl_context, hostname_or_common_name);
         if (result != 0)
         {
             printf("Error setting up TLS: %s\n", TLSUtils::errorMessageFromReturnCode(result).c_str());
