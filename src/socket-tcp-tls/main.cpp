@@ -9,55 +9,114 @@
 #include "network/HTTPResponse.h"
 
 #include "network/tls/GlobalSharedState.h"
+#include "network/SocketTCP_SSL.h"
+
+#include "SocketTools.h"
 
 using namespace ITKCommon;
 
 const int SERVER_ACCEPT_QUEUE_SIZE = SOMAXCONN;
 const int SERVER_MAX_TASKS_QUEUE_SIZE = 200;
 
-void connect(const std::string addr_ipv4)
+void connect(const std::string url_or_addr_ipv4, bool use_full_url_as_input)
 {
-    Platform::SocketTCP clientSocket;
+    Platform::SocketTools::ParsedURL parsed_url;
+    std::string addr_ipv4;
 
-    if (!clientSocket.connect(addr_ipv4, 8444))
+    if (use_full_url_as_input)
+    {
+        parsed_url = Platform::SocketTools::parseURL(url_or_addr_ipv4);
+        if (!parsed_url.valid)
+        {
+            printf("Invalid URL format: %s\n", url_or_addr_ipv4.c_str());
+            return;
+        }
+
+        addr_ipv4 = Platform::SocketTools::resolveHostname(parsed_url.hostname);
+        if (addr_ipv4.empty())
+        {
+            printf("Failed to resolve hostname: %s\n", parsed_url.hostname.c_str());
+            return;
+        }
+
+        printf("Parsed URL:\n");
+        printf("  Protocol: %s\n", parsed_url.protocol.c_str());
+        printf("  Hostname: %s\n", parsed_url.hostname.c_str());
+        printf("  Resolved IPv4: %s\n", addr_ipv4.c_str());
+        printf("  Port: %u\n", parsed_url.port);
+        printf("  Path: %s\n", parsed_url.path.c_str());
+    }
+    else
+    {
+        addr_ipv4 = Platform::SocketTools::resolveHostname(url_or_addr_ipv4);
+        parsed_url.hostname = url_or_addr_ipv4;
+        parsed_url.port = 8444; // default port
+        parsed_url.ssl = false;
+    }
+
+    std::shared_ptr<Platform::SocketTCP> clientSocket;
+
+    std::shared_ptr<ITKExtension::Network::SocketTCP_SSL> sslSocket;
+    std::shared_ptr<TLS::CertificateChain> certificate_chain;
+
+    if (parsed_url.ssl)
+    {
+        certificate_chain = TLS::CertificateChain::CreateShared();
+        certificate_chain->addSystemCertificates();
+        clientSocket = sslSocket = ITKExtension::Network::SocketTCP_SSL::CreateShared();
+    }
+    else
+        clientSocket = std::make_shared<Platform::SocketTCP>();
+
+    if (!clientSocket->connect(addr_ipv4, parsed_url.port))
     {
         printf("Connect failed!!!... interrupting current thread\n");
-        clientSocket.close();
+        clientSocket->close();
         return;
     }
 
-    clientSocket.setNoDelay(true);
-    // clientSocket.setWriteTimeout(500); // 500 ms write timeout
-    // clientSocket.setReadTimeout(1500); // 1500 ms read timeout
+    clientSocket->setNoDelay(true);
+    // clientSocket->setWriteTimeout(500); // 500 ms write timeout
+    // clientSocket->setReadTimeout(1500); // 1500 ms read timeout
+
+    if (sslSocket != nullptr)
+    {
+        sslSocket->handshakeAsClient(certificate_chain, parsed_url.hostname.c_str(), true);
+    }
 
     {
         ITKExtension::Network::HTTPRequest req;
-        req.setDefault(addr_ipv4, "GET", "/");
-        if (!req.writeToStream(&clientSocket))
+        req.setDefault(parsed_url.hostname, "GET", parsed_url.path);
+        if (!req.writeToStream(clientSocket.get()))
         {
             printf("Failed to send HTTP Request...\n");
-            clientSocket.close();
+            clientSocket->close();
             return;
         }
     }
 
     {
         ITKExtension::Network::HTTPResponse res;
-        if (!res.readFromStream(&clientSocket))
+        if (!res.readFromStream(clientSocket.get()))
         {
             printf("Failed to read HTTP Response...\n");
-            clientSocket.close();
+            clientSocket->close();
             return;
         }
 
         printf("Received HTTP Response: %d %s\n", res.status_code, res.reason_phrase.c_str());
-        if (res.getHeader("Content-Type") == "text/plain")
+        printf("Headers:\n");
+        for (const auto &header_pair : res.headers)
+            printf("  %s: %s\n", header_pair.first.c_str(), header_pair.second.c_str());
+        
+        if (ITKCommon::StringUtil::contains(res.getHeader("Content-Type"), "text/plain") ||
+            ITKCommon::StringUtil::contains(res.getHeader("Content-Type"), "text/html"))
             printf("Body (%u bytes): %s\n", (uint32_t)res.body.size(), res.bodyAsString().c_str());
     }
 
     printf("Closing connection...\n");
 
-    clientSocket.close();
+    clientSocket->close();
 }
 
 void start_server()
@@ -179,7 +238,9 @@ int main(int argc, char *argv[])
         Platform::Thread::getMainThread()->interrupt(); });
 
     if (argc == 3 && (strcmp(argv[1], "connect") == 0))
-        connect(argv[2]);
+        connect(argv[2], false);
+    if (argc == 3 && (strcmp(argv[1], "wget") == 0))
+        connect(argv[2], true);
     else if (argc == 2 && (strcmp(argv[1], "server") == 0))
         start_server();
     else
@@ -191,6 +252,9 @@ int main(int argc, char *argv[])
                "\n"
                "# connect to server:\n"
                "./socket-tcp connect <IP>\n"
+               "\n"
+               "# HTTPS wget hostname:\n"
+               "./socket-tcp wget <http|https>://<subdomain.domain:port>/<path>\n"
                "\n");
     }
 

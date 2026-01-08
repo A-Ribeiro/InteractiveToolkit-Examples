@@ -116,6 +116,8 @@ namespace ITKExtension
 
             // read body if Content-Length is set
             auto it = headers.find("Content-Length");
+            auto te_it = headers.find("Transfer-Encoding");
+
             if (it != headers.end())
             {
                 uint32_t content_length;
@@ -155,6 +157,145 @@ namespace ITKExtension
                         }
                     }
                     total_read += to_read;
+                }
+            }
+            else if (te_it != headers.end() && te_it->second.find("chunked") != std::string::npos)
+            {
+                // Read chunked encoding
+                std::vector<char> chunk_buffer;
+                chunk_buffer.reserve(HTTP_READ_BUFFER_CHUNK_SIZE);
+
+                // Copy any remaining data from input_buffer
+                for (uint32_t i = curr_reading; i < read_feedback; i++)
+                    chunk_buffer.push_back(input_buffer[i]);
+
+                bool finished = false;
+                while (!finished)
+                {
+                    // Read chunk size line (hex number followed by \r\n)
+                    while (true)
+                    {
+                        // Check if we have \r\n in buffer
+                        bool found_crlf = false;
+                        size_t crlf_pos = 0;
+                        for (size_t i = 0; i + 1 < chunk_buffer.size(); i++)
+                        {
+                            if (chunk_buffer[i] == '\r' && chunk_buffer[i + 1] == '\n')
+                            {
+                                found_crlf = true;
+                                crlf_pos = i;
+                                break;
+                            }
+                        }
+
+                        if (found_crlf)
+                        {
+                            // Parse chunk size
+                            std::string chunk_size_str(chunk_buffer.begin(), chunk_buffer.begin() + crlf_pos);
+                            uint32_t chunk_size = 0;
+                            if (sscanf(chunk_size_str.c_str(), "%x", &chunk_size) != 1)
+                            {
+                                printf("[HTTP] Invalid chunk size: %s\n", chunk_size_str.c_str());
+                                return false;
+                            }
+
+                            // Remove chunk size line from buffer
+                            chunk_buffer.erase(chunk_buffer.begin(), chunk_buffer.begin() + crlf_pos + 2);
+
+                            if (chunk_size == 0)
+                            {
+                                // Last chunk - finished
+                                finished = true;
+                                break;
+                            }
+
+                            // Read chunk data + \r\n
+                            uint32_t total_chunk_data = chunk_size + 2; // +2 for trailing \r\n
+                            while (chunk_buffer.size() < total_chunk_data)
+                            {
+                                uint32_t chunk_read = 0;
+                                char temp_buffer[HTTP_READ_BUFFER_CHUNK_SIZE];
+                                if (!socket->read_buffer((uint8_t *)temp_buffer, sizeof(temp_buffer), &chunk_read))
+                                {
+                                    if (socket->isReadTimedout())
+                                    {
+                                        printf("[HTTP] Read chunked data timed out\n");
+                                        return false;
+                                    }
+                                    else
+                                    {
+                                        printf("[HTTP] Connection interrupted reading chunk\n");
+                                        return false;
+                                    }
+                                }
+                                chunk_buffer.insert(chunk_buffer.end(), temp_buffer, temp_buffer + chunk_read);
+                            }
+
+                            // Copy chunk data to body (excluding trailing \r\n)
+                            body.insert(body.end(), chunk_buffer.begin(), chunk_buffer.begin() + chunk_size);
+
+                            if (body.size() >= HTTP_MAX_BODY_SIZE)
+                            {
+                                printf("[HTTP] Body size exceeded limit during chunked read\n");
+                                return false;
+                            }
+
+                            // Remove chunk data + \r\n from buffer
+                            chunk_buffer.erase(chunk_buffer.begin(), chunk_buffer.begin() + total_chunk_data);
+                            break;
+                        }
+                        else
+                        {
+                            // Need more data
+                            uint32_t chunk_read = 0;
+                            char temp_buffer[HTTP_READ_BUFFER_CHUNK_SIZE];
+                            if (!socket->read_buffer((uint8_t *)temp_buffer, sizeof(temp_buffer), &chunk_read))
+                            {
+                                if (socket->isReadTimedout())
+                                {
+                                    printf("[HTTP] Read chunk size timed out\n");
+                                    return false;
+                                }
+                                else
+                                {
+                                    printf("[HTTP] Connection interrupted reading chunk size\n");
+                                    return false;
+                                }
+                            }
+                            chunk_buffer.insert(chunk_buffer.end(), temp_buffer, temp_buffer + chunk_read);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // No Content-Length and no chunked encoding
+                // Read until connection closes
+
+                // Copy any remaining data from input_buffer
+                for (uint32_t i = curr_reading; i < read_feedback; i++)
+                    body.push_back(input_buffer[i]);
+
+                while (true)
+                {
+                    uint32_t chunk_read = 0;
+                    char temp_buffer[HTTP_READ_BUFFER_CHUNK_SIZE];
+                    if (!socket->read_buffer((uint8_t *)temp_buffer, sizeof(temp_buffer), &chunk_read))
+                    {
+                        // Connection closed or error - this is expected for this case
+                        break;
+                    }
+
+                    if (chunk_read == 0)
+                        break; // EOF
+
+                    body.insert(body.end(), temp_buffer, temp_buffer + chunk_read);
+
+                    if (body.size() >= HTTP_MAX_BODY_SIZE)
+                    {
+                        printf("[HTTP] Body size exceeded limit reading until close\n");
+                        return false;
+                    }
                 }
             }
 
