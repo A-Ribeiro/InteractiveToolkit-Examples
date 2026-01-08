@@ -1,5 +1,6 @@
 #include <InteractiveToolkit/InteractiveToolkit.h>
 #include <InteractiveToolkit/Platform/Platform.h>
+#include <InteractiveToolkit/ITKCommon/Date.h>
 
 #include <iostream>
 #include <stdlib.h>
@@ -10,6 +11,9 @@
 #include "network/tls/GlobalSharedState.h"
 
 using namespace ITKCommon;
+
+const int SERVER_ACCEPT_QUEUE_SIZE = SOMAXCONN;
+const int SERVER_MAX_TASKS_QUEUE_SIZE = 200;
 
 void connect(const std::string addr_ipv4)
 {
@@ -62,9 +66,9 @@ void start_server()
     Platform::SocketTCPAccept serverSocket(true, true, true);
 
     if (!serverSocket.bindAndListen(
-            "INADDR_ANY", // interface address
-            8444,         // port
-            10))          // input queue
+            "INADDR_ANY",              // interface address
+            8444,                      // port
+            SERVER_ACCEPT_QUEUE_SIZE)) // input queue
     {
         printf("Error to bind address\n");
         serverSocket.close();
@@ -95,12 +99,12 @@ void start_server()
 
         time.update();
         if (time.deltaTime >= 1.0f)
-            printf("thread pool queue size: %u / 200\n", threadPool.taskInQueue());
+            printf("[%s] task queue size: %u / %i\n", ITKCommon::Date::NowUTC().toISOString().c_str(), threadPool.taskInQueue(), SERVER_MAX_TASKS_QUEUE_SIZE);
         else
             time.rollback_and_set_zero();
 
         // if there are 200 or more tasks in the queue, refuse new connections
-        if (threadPool.taskInQueue() >= 200)
+        if (threadPool.taskInQueue() >= SERVER_MAX_TASKS_QUEUE_SIZE)
         {
             clientSocket->close();
             continue;
@@ -108,6 +112,16 @@ void start_server()
 
         threadPool.postTask([clientSocket]()
                             {
+            // thread pool finish is called
+            // the remaining tasks in the queue are executed
+            if (Platform::Thread::isCurrentThreadInterrupted()) 
+            {
+                printf("Thread pool finished. Closing remaining connections.\n");
+                clientSocket->close();
+                delete clientSocket;
+                return;
+            }
+                
             // client thread (server side)
             Platform::SocketTCP *socket = clientSocket;
             socket->setNoDelay(true);
