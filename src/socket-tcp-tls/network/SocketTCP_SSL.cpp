@@ -8,7 +8,7 @@ namespace ITKExtension
         // @param hostname_or_common_name: set the expected hostname for server certificate verification
         //          - The Common Name (e.g. server FQDN or YOUR name) parameter of the server certificate
         //          - The Host passed through the HTTP header
-        bool SocketTCP_SSL::handshakeAsClient(std::shared_ptr<TLS::CertificateChain> &certificate_chain, const char *hostname_or_common_name, bool verify_peer)
+        bool SocketTCP_SSL::handshakeAsClient(std::shared_ptr<TLS::CertificateChain> certificate_chain, const char *hostname_or_common_name, bool verify_peer)
         {
             return !sslContext.setup_called &&
                    sslContext.setupAsClient(certificate_chain, hostname_or_common_name, verify_peer) &&
@@ -16,7 +16,7 @@ namespace ITKExtension
                    sslContext.doHandshake();
         }
 
-        bool SocketTCP_SSL::handshakeAsServer(std::shared_ptr<TLS::CertificateChain> &certificate_chain, std::shared_ptr<TLS::PrivateKey> &private_key, bool verify_peer)
+        bool SocketTCP_SSL::handshakeAsServer(std::shared_ptr<TLS::CertificateChain> certificate_chain, std::shared_ptr<TLS::PrivateKey> private_key, bool verify_peer)
         {
             return !sslContext.setup_called &&
                    sslContext.setupAsServer(certificate_chain, private_key, verify_peer) &&
@@ -26,6 +26,7 @@ namespace ITKExtension
 
         bool SocketTCP_SSL::write_buffer(const uint8_t *data, uint32_t size, uint32_t *write_feedback)
         {
+            printf("[SocketTCP_SSL] Writing to SSL SocketTCP_SSL...\n");
             return sslContext.write_buffer(data, size, write_feedback);
         }
 
@@ -41,11 +42,13 @@ namespace ITKExtension
                 }
                 return true;
             }
+            printf("[SocketTCP_SSL] Reading from SSL SocketTCP_SSL...\n");
             return sslContext.read_buffer(data, size, read_feedback);
         }
 
         void SocketTCP_SSL::close()
         {
+            printf("[SocketTCP_SSL] Closing SSL SocketTCP_SSL...\n");
             sslContext.close();
             SocketTCP::close();
             // make possible to do another handshake, in case of a new connection

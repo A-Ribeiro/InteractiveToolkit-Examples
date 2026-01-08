@@ -173,10 +173,11 @@ namespace TLS
                 uint32_t write_feedback;
                 if (!tcp_socket->Platform::SocketTCP::write_buffer(data, size, &write_feedback))
                 {
-                    if (tcp_socket->Platform::SocketTCP::isClosed())
-                        return MBEDTLS_ERR_NET_CONN_RESET;
-                    else
-                        return MBEDTLS_ERR_SSL_WANT_WRITE;
+                    return MBEDTLS_ERR_NET_CONN_RESET;
+                    // if (tcp_socket->Platform::SocketTCP::isClosed())
+                    //     return MBEDTLS_ERR_NET_CONN_RESET;
+                    // else
+                    //     return MBEDTLS_ERR_SSL_WANT_WRITE;
                 }
                 return (int)write_feedback;
             },
@@ -184,32 +185,42 @@ namespace TLS
             {
                 Platform::SocketTCP *tcp_socket = static_cast<Platform::SocketTCP *>(context);
                 uint32_t read_feedback;
-                tcp_socket->Platform::SocketTCP::setReadTimeout(0);
+                // tcp_socket->Platform::SocketTCP::setReadTimeout(0);
                 if (!tcp_socket->Platform::SocketTCP::read_buffer(data, size, &read_feedback))
                 {
-                    if (tcp_socket->Platform::SocketTCP::isClosed())
-                        return MBEDTLS_ERR_NET_CONN_RESET;
-                    else
-                        return MBEDTLS_ERR_SSL_WANT_READ;
+                    if (tcp_socket->Platform::SocketTCP::isReadTimedout())
+                        return MBEDTLS_ERR_SSL_TIMEOUT;
+                    return MBEDTLS_ERR_NET_CONN_RESET;
+                    // if (tcp_socket->Platform::SocketTCP::isClosed())
+                    //     return MBEDTLS_ERR_NET_CONN_RESET;
+                    // else
+                    //     return MBEDTLS_ERR_SSL_WANT_READ;
                 }
                 return (int)read_feedback;
             },
-            [](void *context, unsigned char *data, std::size_t size, uint32_t timeout_ms) -> int
-            {
-                Platform::SocketTCP *tcp_socket = static_cast<Platform::SocketTCP *>(context);
-                uint32_t read_feedback;
-                tcp_socket->Platform::SocketTCP::setReadTimeout(timeout_ms);
-                if (!tcp_socket->Platform::SocketTCP::read_buffer(data, size, &read_feedback))
-                {
-                    if (tcp_socket->Platform::SocketTCP::isClosed())
-                        return MBEDTLS_ERR_NET_CONN_RESET;
-                    else if (tcp_socket->Platform::SocketTCP::isReadTimedout())
-                        return MBEDTLS_ERR_SSL_TIMEOUT;
-                    else
-                        return MBEDTLS_ERR_SSL_WANT_READ;
-                }
-                return (int)read_feedback;
-            });
+            nullptr
+            // [](void *context, unsigned char *data, std::size_t size, uint32_t timeout_ms) -> int
+            // {
+            //     Platform::SocketTCP *tcp_socket = static_cast<Platform::SocketTCP *>(context);
+            //     uint32_t read_feedback;
+            //     tcp_socket->Platform::SocketTCP::setReadTimeout(timeout_ms);
+            //     if (!tcp_socket->Platform::SocketTCP::read_buffer(data, size, &read_feedback))
+            //     {
+            //         if (tcp_socket->Platform::SocketTCP::isReadTimedout())
+            //             return MBEDTLS_ERR_SSL_TIMEOUT;
+            //         else
+            //             return MBEDTLS_ERR_NET_CONN_RESET;
+
+            //         // if (tcp_socket->Platform::SocketTCP::isClosed())
+            //         //     return MBEDTLS_ERR_NET_CONN_RESET;
+            //         // else if (tcp_socket->Platform::SocketTCP::isReadTimedout())
+            //         //     return MBEDTLS_ERR_SSL_TIMEOUT;
+            //         // else
+            //         //     return MBEDTLS_ERR_SSL_WANT_READ;
+            //     }
+            //     return (int)read_feedback;
+            // }
+        );
         return true;
     }
 

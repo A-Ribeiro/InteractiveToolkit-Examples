@@ -11,21 +11,19 @@
 #include "network/tls/GlobalSharedState.h"
 #include "network/SocketTCP_SSL.h"
 
-#include "SocketTools.h"
-
 using namespace ITKCommon;
 
 const int SERVER_ACCEPT_QUEUE_SIZE = SOMAXCONN;
 const int SERVER_MAX_TASKS_QUEUE_SIZE = 200;
 
-void connect(const std::string url_or_addr_ipv4, bool use_full_url_as_input)
+void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, const std::string &client_cert_file = "")
 {
-    Platform::SocketTools::ParsedURL parsed_url;
+    Platform::SocketTools::URL parsed_url;
     std::string addr_ipv4;
 
     if (use_full_url_as_input)
     {
-        parsed_url = Platform::SocketTools::parseURL(url_or_addr_ipv4);
+        parsed_url = Platform::SocketTools::URL::parse(url_or_addr_ipv4);
         if (!parsed_url.valid)
         {
             printf("Invalid URL format: %s\n", url_or_addr_ipv4.c_str());
@@ -62,7 +60,16 @@ void connect(const std::string url_or_addr_ipv4, bool use_full_url_as_input)
     if (parsed_url.ssl)
     {
         certificate_chain = TLS::CertificateChain::CreateShared();
-        certificate_chain->addSystemCertificates();
+        if (!client_cert_file.empty())
+        {
+            if (!certificate_chain->addCertificateFromFile(client_cert_file.c_str()))
+            {
+                printf("Failed to load client certificate file: %s\n", client_cert_file.c_str());
+                return;
+            }
+        }
+        else
+            certificate_chain->addSystemCertificates();
         clientSocket = sslSocket = ITKExtension::Network::SocketTCP_SSL::CreateShared();
     }
     else
@@ -81,7 +88,14 @@ void connect(const std::string url_or_addr_ipv4, bool use_full_url_as_input)
 
     if (sslSocket != nullptr)
     {
-        sslSocket->handshakeAsClient(certificate_chain, parsed_url.hostname.c_str(), true);
+        if (!sslSocket->handshakeAsClient(certificate_chain, parsed_url.hostname.c_str(), true))
+        {
+            printf("SSL Handshake failed!!!... interrupting current thread\n");
+            clientSocket->close();
+            return;
+        }
+        else
+            printf("SSL Handshake succeeded.\n");
     }
 
     {
@@ -108,7 +122,7 @@ void connect(const std::string url_or_addr_ipv4, bool use_full_url_as_input)
         printf("Headers:\n");
         for (const auto &header_pair : res.headers)
             printf("  %s: %s\n", header_pair.first.c_str(), header_pair.second.c_str());
-        
+
         if (ITKCommon::StringUtil::contains(res.getHeader("Content-Type"), "text/plain") ||
             ITKCommon::StringUtil::contains(res.getHeader("Content-Type"), "text/html"))
             printf("Body (%u bytes): %s\n", (uint32_t)res.body.size(), res.bodyAsString().c_str());
@@ -119,14 +133,37 @@ void connect(const std::string url_or_addr_ipv4, bool use_full_url_as_input)
     clientSocket->close();
 }
 
-void start_server()
+void start_server(int port = 8444, const std::string &cert_file = "", const std::string &private_key_file = "")
 {
+
+    // std::shared_ptr<ITKExtension::Network::SocketTCP_SSL> sslSocket;
+    std::shared_ptr<TLS::CertificateChain> certificate_chain;
+    std::shared_ptr<TLS::PrivateKey> private_key;
+
+    if (!cert_file.empty() && !private_key_file.empty())
+    {
+        certificate_chain = TLS::CertificateChain::CreateShared();
+        private_key = TLS::PrivateKey::CreateShared();
+
+        if (!certificate_chain->addCertificateFromFile(cert_file.c_str()))
+        {
+            printf("Failed to load server certificate file: %s\n", cert_file.c_str());
+            return;
+        }
+        if (!private_key->setKeyNotEncryptedFromFile(private_key_file.c_str()))
+        {
+            printf("Failed to load server private key file: %s\n", private_key_file.c_str());
+            return;
+        }
+        printf("Server certificate and private key loaded successfully.\n");
+    }
+
     // blocking: true, reuseAddress: true, noDelay: true
     Platform::SocketTCPAccept serverSocket(true, true, true);
 
     if (!serverSocket.bindAndListen(
             "INADDR_ANY",              // interface address
-            8444,                      // port
+            port,                      // port
             SERVER_ACCEPT_QUEUE_SIZE)) // input queue
     {
         printf("Error to bind address\n");
@@ -143,7 +180,13 @@ void start_server()
     Platform::ThreadPool threadPool(std::max(Platform::Thread::QueryNumberOfSystemThreads(), 4));
 
     Platform::Time time;
-    Platform::SocketTCP *clientSocket = new Platform::SocketTCP();
+    Platform::SocketTCP *clientSocket;
+
+    if (certificate_chain != nullptr && private_key != nullptr)
+        clientSocket = new ITKExtension::Network::SocketTCP_SSL();
+    else
+        clientSocket = new Platform::SocketTCP();
+
     while (!Platform::Thread::isCurrentThreadInterrupted())
     {
         bool connection_accepted = true;
@@ -169,7 +212,10 @@ void start_server()
             continue;
         }
 
-        threadPool.postTask([clientSocket]()
+        auto certificate_chain_ptr = certificate_chain.get();
+        auto private_key_ptr = private_key.get();
+
+        threadPool.postTask([clientSocket, certificate_chain_ptr, private_key_ptr]()
                             {
             // thread pool finish is called
             // the remaining tasks in the queue are executed
@@ -190,6 +236,23 @@ void start_server()
 
             char client_str[32];
             snprintf(client_str, 32, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));
+
+            if (certificate_chain_ptr != nullptr && private_key_ptr != nullptr)
+            {
+                auto ssl_socket = (ITKExtension::Network::SocketTCP_SSL*)socket;
+                if (!ssl_socket->handshakeAsServer(
+                        std::shared_ptr<TLS::CertificateChain>(certificate_chain_ptr, [](TLS::CertificateChain *) {}),
+                        std::shared_ptr<TLS::PrivateKey>(private_key_ptr, [](TLS::PrivateKey *) {}),
+                        false // verify peer
+                    ))
+                {
+                    printf("SSL Handshake failed on %s\n", client_str);
+                    ssl_socket->close();
+                    delete socket;
+                    return;
+                }
+                printf("SSL Handshake succeeded on %s\n", client_str);
+            }
 
             ITKExtension::Network::HTTPRequest req;
             if (!req.readFromStream(socket))
@@ -216,7 +279,10 @@ void start_server()
             socket->close();
             delete socket; });
 
-        clientSocket = new Platform::SocketTCP();
+        if (certificate_chain != nullptr && private_key != nullptr)
+            clientSocket = new ITKExtension::Network::SocketTCP_SSL();
+        else
+            clientSocket = new Platform::SocketTCP();
     }
 
     serverSocket.close();
@@ -241,20 +307,30 @@ int main(int argc, char *argv[])
         connect(argv[2], false);
     if (argc == 3 && (strcmp(argv[1], "wget") == 0))
         connect(argv[2], true);
+    if (argc == 4 && (strcmp(argv[1], "wget") == 0))
+        connect(argv[2], true, argv[3]);
+    else if (argc == 5 && (strcmp(argv[1], "server") == 0))
+        start_server(atoi(argv[2]), argv[3], argv[4]);
     else if (argc == 2 && (strcmp(argv[1], "server") == 0))
         start_server();
     else
     {
         printf("Examples: \n"
                "\n"
-               "# start server:\n"
+               "# start server (on port: 8444):\n"
                "./socket-tcp server\n"
                "\n"
-               "# connect to server:\n"
+               "# connect to server (on port: 8444):\n"
                "./socket-tcp connect <IP>\n"
+               "\n"
+               "# start server:\n"
+               "./socket-tcp server <port> <cert_file.crt> <private_key_file.key>\n"
                "\n"
                "# HTTPS wget hostname:\n"
                "./socket-tcp wget <http|https>://<subdomain.domain:port>/<path>\n"
+               "\n"
+               "# HTTPS wget hostname (with certificate):\n"
+               "./socket-tcp wget https://<subdomain.domain:port>/<path> <cert_file.crt>\n"
                "\n");
     }
 
