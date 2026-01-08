@@ -45,8 +45,24 @@ namespace TLS
     bool CertificateChain::addCertificate(const uint8_t *data, size_t length, bool add_all_certificates_is_required)
     {
         initialize_structures();
-        std::string dataStr((const char *)data, length);
-        int result = mbedtls_x509_crt_parse(&x509_crt, (const unsigned char *)dataStr.c_str(), strlen(dataStr.c_str()) + 1);
+        int result;
+
+        bool data_is_all_alphanumeric = true;
+        for (size_t i = 0; i < length; ++i)
+        {
+            if (!isalnum(data[i]) && !isspace(data[i]) && data[i] != '-' && data[i] != '/' && data[i] != '=' && data[i] != '+' && data[i] != '\n' && data[i] != '\r')
+            {
+                data_is_all_alphanumeric = false;
+                break;
+            }
+        }
+        if (data_is_all_alphanumeric)
+        {
+            std::string dataStr((const char *)data, length);
+            result = mbedtls_x509_crt_parse(&x509_crt, (const unsigned char *)dataStr.c_str(), strlen(dataStr.c_str()) + 1);
+        }
+        else
+            result = mbedtls_x509_crt_parse(&x509_crt, (const unsigned char *)data, length);
         if (result < 0)
             printf("Failed to add certificate: %s\n", TLS::TLSUtils::errorMessageFromReturnCode(result).c_str());
         if (add_all_certificates_is_required)
@@ -61,8 +77,23 @@ namespace TLS
     bool CertificateChain::addCertificateRevokationList(const uint8_t *data, size_t length, bool add_all_crl_is_required)
     {
         initialize_structures();
-        std::string dataStr((const char *)data, length);
-        int result = mbedtls_x509_crl_parse(&x509_crl, (const unsigned char *)dataStr.c_str(), strlen(dataStr.c_str()) + 1);
+        int result;
+        bool data_is_all_alphanumeric = true;
+        for (size_t i = 0; i < length; ++i)
+        {
+            if (!isalnum(data[i]) && !isspace(data[i]) && data[i] != '-' && data[i] != '/' && data[i] != '=' && data[i] != '+' && data[i] != '\n' && data[i] != '\r')
+            {
+                data_is_all_alphanumeric = false;
+                break;
+            }
+        }
+        if (data_is_all_alphanumeric)
+        {
+            std::string dataStr((const char *)data, length);
+            result = mbedtls_x509_crl_parse(&x509_crl, (const unsigned char *)dataStr.c_str(), strlen(dataStr.c_str()) + 1);
+        }
+        else
+            result = mbedtls_x509_crl_parse(&x509_crl, (const unsigned char *)data, length);
         if (result < 0)
             printf("Failed to add certificate: %s\n", TLS::TLSUtils::errorMessageFromReturnCode(result).c_str());
         if (add_all_crl_is_required)

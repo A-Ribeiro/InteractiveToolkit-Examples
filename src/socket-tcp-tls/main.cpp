@@ -332,5 +332,7 @@ int main(int argc, char *argv[])
                "\n");
     }
 
+    connect("alessandroribeiro.thegeneralsolution.com", true);
+
     return 0;
 }

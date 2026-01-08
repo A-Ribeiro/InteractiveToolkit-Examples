@@ -360,6 +360,7 @@ namespace TLS
 
     bool SSLContext::write_buffer(const uint8_t *data, uint32_t size, uint32_t *write_feedback)
     {
+        *write_feedback = 0;
         if (!this->handshake_done)
             return false;
 
@@ -396,7 +397,7 @@ namespace TLS
                 release_structures();
                 return false;
             }
-            else if (result == 0 || result == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || result == MBEDTLS_ERR_NET_CONN_RESET)
+            else if (result == 0 || result == MBEDTLS_ERR_NET_CONN_RESET)
             {
                 // connection was closed
                 printf("TLS connection was closed during write.\n");
@@ -413,10 +414,10 @@ namespace TLS
 
     bool SSLContext::read_buffer(uint8_t *data, uint32_t size, uint32_t *read_feedback)
     {
+        *read_feedback = 0;
+
         if (!this->handshake_done)
             return false;
-
-        *read_feedback = 0;
 
         int result;
         bool should_retry;

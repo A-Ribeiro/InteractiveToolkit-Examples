@@ -120,8 +120,9 @@ namespace TLS
                 if (file.isDirectory || file.size >= 10 * 1024 * 1024)
                     continue;
                 if (file.readContentToObjectBuffer(&file_content))
-                    if (file_content.size > 27 &&
-                        memcmp(file_content.data, "-----BEGIN CERTIFICATE-----", 27) == 0)
+                    // if (file_content.size > 27 &&
+                    //     memcmp(file_content.data, "-----BEGIN CERTIFICATE-----", 27) == 0)
+                    if (file_content.size > 0)
                         onCRT((const uint8_t *)file_content.data, (size_t)file_content.size);
             }
         }
