@@ -14,7 +14,7 @@ void send_packet_run(const char* ip)
     socket_write.createFD(false, true);
     socket_write.bind(); // ephemeral port and address...
 
-    struct sockaddr_in server_addr = Platform::SocketUtils::mountAddress(ip, 5002);
+    struct sockaddr_in server_addr = Platform::SocketTools::mountAddress(ip, 5002);
 
     char buffer[] = "UDP Send.";
 
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
         Platform::Thread::getMainThread()->interrupt(); });
 
     if (argc == 3 && (strcmp(argv[1], "send-packet") == 0))
-        send_packet_run(argv[2]);
+        send_packet_run( Platform::SocketTools::resolveHostname(argv[2]).c_str() );
     else if (argc == 2 && (strcmp(argv[1], "wait-packet") == 0))
         receive_packet_run();
     else

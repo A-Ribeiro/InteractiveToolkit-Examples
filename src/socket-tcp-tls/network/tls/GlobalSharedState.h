@@ -7,7 +7,6 @@
 #if (MBEDTLS_VERSION_MAJOR < 4)
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
-// #include <mbedtls/mbedtls_config.h>
 #else
 // #include <mbedtls/threading.h>
 // #include <psa/crypto_config.h>

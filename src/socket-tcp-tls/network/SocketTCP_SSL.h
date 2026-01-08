@@ -2,6 +2,7 @@
 
 #include <InteractiveToolkit/Platform/SocketTCP.h>
 #include "tls/SSLContext.h"
+#include "tls/GlobalSharedState.h"
 
 namespace ITKExtension
 {

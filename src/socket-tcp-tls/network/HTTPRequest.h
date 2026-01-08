@@ -1,13 +1,13 @@
 #pragma once
 
-#include "HTTP.h"
+#include "HTTPBase.h"
 
 namespace ITKExtension
 {
     namespace Network
     {
 
-        class HTTPRequest : public HTTP
+        class HTTPRequest : public HTTPBase
         {
         protected:
             bool read_first_line(const std::string &firstLine);

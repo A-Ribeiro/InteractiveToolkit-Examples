@@ -160,9 +160,10 @@ namespace TLS
         int result = mbedtls_ctr_drbg_seed(&ctr_drbg_context,
                                            mbedtls_entropy_func,
                                            &entropy_context,
-                                           rng_curr_time_str.c_str(),
-                                           rng_curr_time_str.length());
-        ITK_ABORT(result != 0, "Failed to seed DRBG: %s\n", errorMessageFromReturnCode(result).c_str());
+                                           (const unsigned char*) rng_curr_time_str.c_str(),
+                                           std::min(rng_curr_time_str.length(), (size_t)MBEDTLS_CTR_DRBG_MAX_SEED_INPUT)
+                                        );
+        ITK_ABORT(result != 0, "Failed to seed DRBG: %s\n", TLSUtils::errorMessageFromReturnCode(result).c_str());
 #else
         // crypto library init after or equal 4.x.x
         psa_status_t result = psa_crypto_init();

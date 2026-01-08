@@ -1,11 +1,11 @@
-#include "HTTP.h"
+#include "HTTPBase.h"
 #include <InteractiveToolkit/Platform/SocketTCP.h>
 
 namespace ITKExtension
 {
     namespace Network
     {
-        bool HTTP::is_valid_header_character(char _chr)
+        bool HTTPBase::is_valid_header_character(char _chr)
         {
             return (_chr >= 32 && _chr <= 126) ||
                    _chr == '\r' ||
@@ -14,7 +14,7 @@ namespace ITKExtension
                    _chr == ' ';
         }
 
-        bool HTTP::readFromStream(Platform::SocketTCP *socket)
+        bool HTTPBase::readFromStream(Platform::SocketTCP *socket, bool read_body_until_connection_close)
         {
             clear();
 
@@ -267,7 +267,7 @@ namespace ITKExtension
                     }
                 }
             }
-            else
+            else if (read_body_until_connection_close)
             {
                 // No Content-Length and no chunked encoding
                 // Read until connection closes
@@ -302,7 +302,7 @@ namespace ITKExtension
             return true;
         }
 
-        bool HTTP::writeToStream(Platform::SocketTCP *socket)
+        bool HTTPBase::writeToStream(Platform::SocketTCP *socket)
         {
             // check headers validity
             for (const auto &header_pair : headers)
@@ -386,12 +386,12 @@ namespace ITKExtension
             return true;
         }
 
-        bool HTTP::hasHeader(const std::string &key) const
+        bool HTTPBase::hasHeader(const std::string &key) const
         {
             return headers.find(key) != headers.end();
         }
 
-        std::string HTTP::getHeader(const std::string &key) const
+        std::string HTTPBase::getHeader(const std::string &key) const
         {
             auto it = headers.find(key);
             if (it != headers.end())
@@ -399,7 +399,7 @@ namespace ITKExtension
             return "";
         }
 
-        HTTP &HTTP::setHeader(const std::string &key,
+        HTTPBase &HTTPBase::setHeader(const std::string &key,
                               const std::string &value)
         {
             std::string key_copy;
@@ -414,7 +414,7 @@ namespace ITKExtension
             return *this;
         }
 
-        HTTP &HTTP::setBody(const std::string &body,
+        HTTPBase &HTTPBase::setBody(const std::string &body,
                             const std::string &content_type)
         {
             if (body.size() > 0)
@@ -431,7 +431,7 @@ namespace ITKExtension
             return *this;
         }
 
-        HTTP &HTTP::setBody(const uint8_t *body, uint32_t body_size,
+        HTTPBase &HTTPBase::setBody(const uint8_t *body, uint32_t body_size,
                             const std::string &content_type)
         {
             if (body_size > 0)
@@ -448,7 +448,7 @@ namespace ITKExtension
             return *this;
         }
 
-        std::string HTTP::bodyAsString() const
+        std::string HTTPBase::bodyAsString() const
         {
             return std::string(body.begin(), body.end());
         }

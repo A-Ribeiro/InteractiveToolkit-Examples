@@ -5,10 +5,7 @@
 #include <iostream>
 #include <stdlib.h>
 
-#include "network/HTTPRequest.h"
-#include "network/HTTPResponse.h"
-
-#include "network/tls/GlobalSharedState.h"
+#include "network/HTTP.h"
 #include "network/SocketTCP_SSL.h"
 
 using namespace ITKCommon;
@@ -16,40 +13,39 @@ using namespace ITKCommon;
 const int SERVER_ACCEPT_QUEUE_SIZE = SOMAXCONN;
 const int SERVER_MAX_TASKS_QUEUE_SIZE = 200;
 
-void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, const std::string &client_cert_file = "")
+void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, const std::string &client_cert_file = "", const std::string &client_cert_common_name = "")
 {
-    Platform::SocketTools::URL parsed_url;
+    Platform::SocketTools::URL url;
     std::string addr_ipv4;
 
     if (use_full_url_as_input)
     {
-        parsed_url = Platform::SocketTools::URL::parse(url_or_addr_ipv4);
-        if (!parsed_url.valid)
+        url = Platform::SocketTools::URL::parse(url_or_addr_ipv4);
+        if (!url.valid)
         {
             printf("Invalid URL format: %s\n", url_or_addr_ipv4.c_str());
             return;
         }
 
-        addr_ipv4 = Platform::SocketTools::resolveHostname(parsed_url.hostname);
+        addr_ipv4 = Platform::SocketTools::resolveHostname(url.hostname);
         if (addr_ipv4.empty())
         {
-            printf("Failed to resolve hostname: %s\n", parsed_url.hostname.c_str());
+            printf("Failed to resolve hostname: %s\n", url.hostname.c_str());
             return;
         }
 
         printf("Parsed URL:\n");
-        printf("  Protocol: %s\n", parsed_url.protocol.c_str());
-        printf("  Hostname: %s\n", parsed_url.hostname.c_str());
+        printf("  Protocol: %s\n", url.protocol.c_str());
+        printf("  Hostname: %s\n", url.hostname.c_str());
         printf("  Resolved IPv4: %s\n", addr_ipv4.c_str());
-        printf("  Port: %u\n", parsed_url.port);
-        printf("  Path: %s\n", parsed_url.path.c_str());
+        printf("  Port: %u\n", url.port);
+        printf("  Path: %s\n", url.path.c_str());
     }
     else
     {
         addr_ipv4 = Platform::SocketTools::resolveHostname(url_or_addr_ipv4);
-        parsed_url.hostname = url_or_addr_ipv4;
-        parsed_url.port = 8444; // default port
-        parsed_url.ssl = false;
+        url = Platform::SocketTools::URL ("https", url_or_addr_ipv4, "/", 8444);
+        url.ssl = false;
     }
 
     std::shared_ptr<Platform::SocketTCP> clientSocket;
@@ -57,7 +53,7 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
     std::shared_ptr<ITKExtension::Network::SocketTCP_SSL> sslSocket;
     std::shared_ptr<TLS::CertificateChain> certificate_chain;
 
-    if (parsed_url.ssl)
+    if (url.ssl)
     {
         certificate_chain = TLS::CertificateChain::CreateShared();
         if (!client_cert_file.empty())
@@ -75,7 +71,7 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
     else
         clientSocket = std::make_shared<Platform::SocketTCP>();
 
-    if (!clientSocket->connect(addr_ipv4, parsed_url.port))
+    if (!clientSocket->connect(addr_ipv4, url.port))
     {
         printf("Connect failed!!!... interrupting current thread\n");
         clientSocket->close();
@@ -88,19 +84,23 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
 
     if (sslSocket != nullptr)
     {
-        if (!sslSocket->handshakeAsClient(certificate_chain, parsed_url.hostname.c_str(), true))
+        // it is possible to ignore the server certificate verification by passing 'false' as the last parameter
+        bool handshake_done;
+        if (client_cert_common_name.empty())
+            handshake_done = sslSocket->handshakeAsClient(certificate_chain, url.hostname.c_str(), true);
+        else
+            handshake_done = sslSocket->handshakeAsClient(certificate_chain, client_cert_common_name.c_str(), true);
+        if (!handshake_done)
         {
             printf("SSL Handshake failed!!!... interrupting current thread\n");
             clientSocket->close();
             return;
         }
-        else
-            printf("SSL Handshake succeeded.\n");
     }
 
     {
         ITKExtension::Network::HTTPRequest req;
-        req.setDefault(parsed_url.hostname, "GET", parsed_url.path);
+        req.setDefault(url.hostname, "GET", url.path);
         if (!req.writeToStream(clientSocket.get()))
         {
             printf("Failed to send HTTP Request...\n");
@@ -111,7 +111,7 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
 
     {
         ITKExtension::Network::HTTPResponse res;
-        if (!res.readFromStream(clientSocket.get()))
+        if (!res.readFromStream(clientSocket.get(), true))
         {
             printf("Failed to read HTTP Response...\n");
             clientSocket->close();
@@ -251,11 +251,10 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
                     delete socket;
                     return;
                 }
-                printf("SSL Handshake succeeded on %s\n", client_str);
             }
 
             ITKExtension::Network::HTTPRequest req;
-            if (!req.readFromStream(socket))
+            if (!req.readFromStream(socket, false))
             {
                 printf("Failed to read HTTP Request on %s\n", client_str);
                 socket->close();
@@ -307,8 +306,8 @@ int main(int argc, char *argv[])
         connect(argv[2], false);
     if (argc == 3 && (strcmp(argv[1], "wget") == 0))
         connect(argv[2], true);
-    if (argc == 4 && (strcmp(argv[1], "wget") == 0))
-        connect(argv[2], true, argv[3]);
+    if (argc == 5 && (strcmp(argv[1], "wget") == 0))
+        connect(argv[2], true, argv[3], argv[4]);
     else if (argc == 5 && (strcmp(argv[1], "server") == 0))
         start_server(atoi(argv[2]), argv[3], argv[4]);
     else if (argc == 2 && (strcmp(argv[1], "server") == 0))
@@ -330,7 +329,7 @@ int main(int argc, char *argv[])
                "./socket-tcp wget <http|https>://<subdomain.domain:port>/<path>\n"
                "\n"
                "# HTTPS wget hostname (with certificate):\n"
-               "./socket-tcp wget https://<subdomain.domain:port>/<path> <cert_file.crt>\n"
+               "./socket-tcp wget https://<subdomain.domain:port>/<path> <cert_file.crt> <cert Common Name (CN)>\n"
                "\n");
     }
 
