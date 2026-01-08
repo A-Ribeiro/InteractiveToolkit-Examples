@@ -13,7 +13,7 @@ using namespace ITKCommon;
 const int SERVER_ACCEPT_QUEUE_SIZE = SOMAXCONN;
 const int SERVER_MAX_TASKS_QUEUE_SIZE = 200;
 
-void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, const std::string &client_cert_file = "", const std::string &client_cert_common_name = "")
+void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, const std::string &client_cert_file = "")
 {
     Platform::SocketTools::URL url;
     std::string addr_ipv4;
@@ -84,12 +84,11 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
 
     if (sslSocket != nullptr)
     {
-        // it is possible to ignore the server certificate verification by passing 'false' as the last parameter
         bool handshake_done;
-        if (client_cert_common_name.empty())
-            handshake_done = sslSocket->handshakeAsClient(certificate_chain, url.hostname.c_str(), true);
+        if (!client_cert_file.empty()) // use Common Name (CN) from certificate
+            handshake_done = sslSocket->handshakeAsClient(certificate_chain, TLS::CertificateChain::getCertificateCommonName(&certificate_chain->x509_crt).c_str(), true);
         else
-            handshake_done = sslSocket->handshakeAsClient(certificate_chain, client_cert_common_name.c_str(), true);
+            handshake_done = sslSocket->handshakeAsClient(certificate_chain, url.hostname.c_str(), true);
         if (!handshake_done)
         {
             printf("SSL Handshake failed!!!... interrupting current thread\n");
@@ -304,10 +303,10 @@ int main(int argc, char *argv[])
 
     if (argc == 3 && (strcmp(argv[1], "connect") == 0))
         connect(argv[2], false);
-    if (argc == 3 && (strcmp(argv[1], "wget") == 0))
+    else if (argc == 3 && (strcmp(argv[1], "wget") == 0))
         connect(argv[2], true);
-    if (argc == 5 && (strcmp(argv[1], "wget") == 0))
-        connect(argv[2], true, argv[3], argv[4]);
+    else if (argc == 4 && (strcmp(argv[1], "wget") == 0))
+        connect(argv[2], true, argv[3]);
     else if (argc == 5 && (strcmp(argv[1], "server") == 0))
         start_server(atoi(argv[2]), argv[3], argv[4]);
     else if (argc == 2 && (strcmp(argv[1], "server") == 0))
@@ -329,7 +328,7 @@ int main(int argc, char *argv[])
                "./socket-tcp wget <http|https>://<subdomain.domain:port>/<path>\n"
                "\n"
                "# HTTPS wget hostname (with certificate):\n"
-               "./socket-tcp wget https://<subdomain.domain:port>/<path> <cert_file.crt> <cert Common Name (CN)>\n"
+               "./socket-tcp wget https://<subdomain.domain:port>/<path> <cert_file.crt>\n"
                "\n");
     }
 

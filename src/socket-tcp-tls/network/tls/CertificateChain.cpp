@@ -4,6 +4,8 @@
 #include <InteractiveToolkit/common.h>
 #include <InteractiveToolkit/ITKCommon/FileSystem/File.h>
 
+#include <mbedtls/oid.h>
+
 namespace TLS
 {
 
@@ -103,6 +105,21 @@ namespace TLS
             { addCertificate(data, size, add_all_certificates_is_required); },
             [this, add_all_crl_is_required](const uint8_t *data, size_t size)
             { addCertificateRevokationList(data, size, add_all_crl_is_required); });
+    }
+
+    std::string CertificateChain::getCertificateCommonName(mbedtls_x509_crt *x509_crt)
+    {
+        // The subject field contains all the distinguished name components (CN, O, OU, C, etc.)
+        const mbedtls_x509_name *name = &x509_crt->subject;
+        // Iterate through the subject attributes
+        while (name != nullptr)
+        {
+            // Check if this is the Common Name (CN) field
+            if (MBEDTLS_OID_CMP(MBEDTLS_OID_AT_CN, &name->oid) == 0)
+                return std::string((char *)name->val.p, name->val.len);
+            name = name->next;
+        }
+        return ""; // CN not found
     }
 
 }

@@ -35,6 +35,8 @@ namespace TLS
         bool addSystemCertificates(bool add_all_certificates_is_required = false,
                                    bool add_all_crl_is_required = false);
 
+        static std::string getCertificateCommonName(mbedtls_x509_crt *x509_crt);
+
         TLS_DECLARE_CREATE_SHARED(CertificateChain)
 
     };
