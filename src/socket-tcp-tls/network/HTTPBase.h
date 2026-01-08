@@ -18,6 +18,8 @@ namespace ITKExtension
         const int HTTP_READ_BUFFER_CHUNK_SIZE = 4 * 1024; // 4 KB
         const int HTTP_MAX_BODY_SIZE = 100 * 1024 * 1024; // 100 MB
 
+        const int HTTP_TRANSFER_ENCODING_MAX_SIZE = 16 * 1024; // 16 KB
+
         class HTTPBase
         {
         protected:

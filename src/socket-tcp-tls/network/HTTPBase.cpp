@@ -205,6 +205,8 @@ namespace ITKExtension
                                 return false;
                             }
 
+                            printf("Chunk size: %u\n", chunk_size);
+
                             // Remove chunk size line from buffer
                             chunk_buffer.erase(chunk_buffer.begin(), chunk_buffer.begin() + crlf_pos + 2);
 
@@ -331,7 +333,16 @@ namespace ITKExtension
                 }
             }
 
-            if (body.size() > 0)
+            // Determine if we need chunked transfer encoding
+            bool use_chunked_encoding = body.size() > HTTP_TRANSFER_ENCODING_MAX_SIZE;
+
+            if (use_chunked_encoding)
+            {
+                // Remove Content-Length and add Transfer-Encoding: chunked
+                headers.erase("Content-Length");
+                headers["Transfer-Encoding"] = "chunked";
+            }
+            else if (body.size() > 0)
             {
                 if (getHeader("Content-Length") != std::to_string(body.size()))
                 {
@@ -386,8 +397,45 @@ namespace ITKExtension
                 return false;
 
             // body
-            if (body.size() > 0 && !socket->write_buffer((uint8_t *)body.data(), (uint32_t)body.size(), &write_feedback))
-                return false;
+            if (body.size() > 0)
+            {
+                if (use_chunked_encoding)
+                {
+                    // Write body using chunked transfer encoding
+                    uint32_t total_sent = 0;
+                    while (total_sent < body.size())
+                    {
+                        uint32_t chunk_size = (std::min)((uint32_t)HTTP_TRANSFER_ENCODING_MAX_SIZE, (uint32_t)(body.size() - total_sent));
+
+                        // Write chunk size in hexadecimal followed by \r\n
+                        char chunk_header[32];
+                        snprintf(chunk_header, sizeof(chunk_header), "%x\r\n", chunk_size);
+                        if (!socket->write_buffer((uint8_t *)chunk_header, (uint32_t)strlen(chunk_header), &write_feedback))
+                            return false;
+
+                        // Write chunk data
+                        if (!socket->write_buffer((uint8_t *)&body[total_sent], chunk_size, &write_feedback))
+                            return false;
+
+                        // Write trailing \r\n
+                        if (!socket->write_buffer((uint8_t *)line_ending_crlf, 2, &write_feedback))
+                            return false;
+
+                        total_sent += chunk_size;
+                    }
+
+                    // Write final chunk (size 0) to indicate end of chunked data
+                    const char *final_chunk = "0\r\n\r\n";
+                    if (!socket->write_buffer((uint8_t *)final_chunk, 5, &write_feedback))
+                        return false;
+                }
+                else
+                {
+                    // Write body as normal (non-chunked)
+                    if (!socket->write_buffer((uint8_t *)body.data(), (uint32_t)body.size(), &write_feedback))
+                        return false;
+                }
+            }
 
             return true;
         }
