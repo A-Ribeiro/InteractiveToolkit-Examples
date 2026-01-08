@@ -39,6 +39,10 @@ namespace ITKExtension
 
             bool writeToStream(Platform::SocketTCP *socket);
 
+            bool hasHeader(const std::string &key) const;
+
+            std::string getHeader(const std::string &key) const;
+
             HTTP &setHeader(const std::string &key,
                             const std::string &value);
 

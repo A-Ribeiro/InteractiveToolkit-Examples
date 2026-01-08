@@ -23,7 +23,7 @@ void connect(const std::string addr_ipv4)
     }
 
     clientSocket.setNoDelay(true);
-    clientSocket.setWriteTimeout(500); // 500 ms write timeout
+    // clientSocket.setWriteTimeout(500); // 500 ms write timeout
     // clientSocket.setReadTimeout(1500); // 1500 ms read timeout
 
     {
@@ -47,12 +47,11 @@ void connect(const std::string addr_ipv4)
         }
 
         printf("Received HTTP Response: %d %s\n", res.status_code, res.reason_phrase.c_str());
-        std::string content_type = res.headers["Content-Type"];
-        if (content_type == "text/plain")
-        {
+        if (res.getHeader("Content-Type") == "text/plain")
             printf("Body (%u bytes): %s\n", (uint32_t)res.body.size(), res.bodyAsString().c_str());
-        }
     }
+
+    printf("Closing connection...\n");
 
     clientSocket.close();
 }
@@ -80,6 +79,7 @@ void start_server()
 
     Platform::ThreadPool threadPool(std::max(Platform::Thread::QueryNumberOfSystemThreads(), 4));
 
+    Platform::Time time;
     Platform::SocketTCP *clientSocket = new Platform::SocketTCP();
     while (!Platform::Thread::isCurrentThreadInterrupted())
     {
@@ -92,6 +92,12 @@ void start_server()
             connection_accepted = false;
             continue; // probably a thread interrupt was triggered... force while to check
         }
+
+        time.update();
+        if (time.deltaTime >= 1.0f)
+            printf("thread pool queue size: %u / 200\n", threadPool.taskInQueue());
+        else
+            time.rollback_and_set_zero();
 
         // if there are 200 or more tasks in the queue, refuse new connections
         if (threadPool.taskInQueue() >= 200)
@@ -107,7 +113,7 @@ void start_server()
             socket->setNoDelay(true);
             socket->setReadTimeout(500);// 500 ms read timeout
 
-            // Platform::Sleep::millis(10000); // wait a bit for client to send data
+            // Platform::Sleep::millis(100); // wait a bit for client to send data
 
             char client_str[32];
             snprintf(client_str, 32, "%s:%u", inet_ntoa(socket->getAddrOut().sin_addr), ntohs(socket->getAddrOut().sin_port));

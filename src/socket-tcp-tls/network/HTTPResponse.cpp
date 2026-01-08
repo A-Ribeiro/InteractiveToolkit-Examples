@@ -13,13 +13,9 @@ namespace ITKExtension
             if (parts.size() >= 3 && ITKCommon::StringUtil::startsWith(parts[0], "HTTP/"))
             {
                 http_version = parts[0];
-                try
+                if (sscanf(parts[1].c_str(), "%i", &status_code) != 1)
                 {
-                    status_code = std::stoi(parts[1]);
-                }
-                catch (...)
-                {
-                    printf("[HTTPResponse] Invalid status code: %s\n", parts[1].c_str());
+                    printf("[HTTPResponse] Invalid status code format: %s\n", parts[1].c_str());
                     return false;
                 }
                 // reason_phrase = firstLine.substr(parts[1].size() + parts[0].size() + 2);
@@ -30,7 +26,7 @@ namespace ITKExtension
         }
         std::string HTTPResponse::mount_first_line()
         {
-            return http_version + " " + std::to_string(status_code) + " " + reason_phrase;
+            return ITKCommon::PrintfToStdString("%s %d %s", http_version.c_str(), status_code, reason_phrase.c_str());
         }
 
         const std::string &HTTPResponse::getReasonPhraseFromStatusCode(int status_code) const

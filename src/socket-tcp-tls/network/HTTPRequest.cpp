@@ -33,7 +33,7 @@ namespace ITKExtension
         }
         std::string HTTPRequest::mount_first_line()
         {
-            return method + " " + path + " " + http_version;
+            return ITKCommon::PrintfToStdString("%s %s %s", method.c_str(), path.c_str(), http_version.c_str());
         }
 
         void HTTPRequest::clear()

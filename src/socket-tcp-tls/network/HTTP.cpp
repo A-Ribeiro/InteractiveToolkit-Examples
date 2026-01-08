@@ -27,9 +27,9 @@ namespace ITKExtension
             char input_buffer[HTTP_READ_BUFFER_CHUNK_SIZE] = {0};
             uint32_t read_feedback = 0;
             uint32_t curr_reading = 0;
-            bool found_crlf = false;
+            bool found_crlf_alone = false;
 
-            while (!found_crlf)
+            while (!found_crlf_alone)
             {
                 if (!socket->read_buffer((uint8_t *)input_buffer, sizeof(input_buffer), &read_feedback))
                 {
@@ -48,85 +48,83 @@ namespace ITKExtension
                 curr_reading = 0;
                 do
                 {
-                    for (uint32_t i = curr_reading; i < read_feedback; i++)
+                    bool found_header = false;
+
+                    for (; curr_reading < read_feedback; curr_reading++)
                     {
-                        if (!is_valid_header_character(input_buffer[i]))
+                        if (!is_valid_header_character(input_buffer[curr_reading]))
                         {
-                            printf("[HTTP] Invalid character in HTTP header: %u\n", (uint8_t)input_buffer[i]);
+                            printf("[HTTP] Invalid character in HTTP header: %u\n", (uint8_t)input_buffer[curr_reading]);
                             return false;
                         }
-                        line.push_back(input_buffer[i]);
-                        if (line.size() >= HTTP_MAX_HEADER_RAW_SIZE || input_buffer[i] == '\0')
+                        line.push_back(input_buffer[curr_reading]);
+                        if (line.size() >= HTTP_MAX_HEADER_RAW_SIZE)
                         {
                             printf("[HTTP] HTTP line too long: %u\n", (uint32_t)line.size());
                             return false;
                         }
+
+                        // CRLF check
                         if (line.size() >= 2 && line[line.size() - 1] == '\n' && line[line.size() - 2] == '\r')
-                            break;
-                    }
-
-                    found_crlf = line.size() == 2 && line[0] == '\r' && line[1] == '\n';
-
-                    curr_reading += (uint32_t)line.size();
-
-                    if (line.size() >= 2 && line[line.size() - 2] == '\r' && line[line.size() - 1] == '\n')
-                    {
-                        line.pop_back();
-                        line.pop_back();
-                    }
-
-                    std::string header = std::string(line.begin(), line.end());
-
-                    // first header
-                    if (!first_line_readed)
-                    {
-                        first_line_readed = true;
-                        if (!read_first_line(header))
-                            return false;
-                        // auto parts = ITKCommon::StringUtil::tokenizer(header, " ");
-                        // if (parts.size() == 3 && ITKCommon::StringUtil::startsWith(parts[2], "HTTP/"))
-                        // {
-                        //     method = parts[0];
-                        //     path = parts[1];
-                        //     http_version = parts[2];
-                        // }
-                    }
-                    else if (!found_crlf)
-                    {
-                        auto delimiter_pos = header.find(": ");
-                        if (delimiter_pos != std::string::npos)
                         {
-                            std::string key = header.substr(0, delimiter_pos);
-                            std::string value = header.substr(delimiter_pos + 2);
-                            headers[key] = value;
+                            // 2 situations: either a header line or a CRLF alone
+                            found_header = line.size() > 2;
+                            found_crlf_alone = !found_header;
+
+                            // advance one position to keep the right byte count
+                            curr_reading++;
+                            break;
                         }
                     }
 
-                    max_http_header_lines--;
-                    if (max_http_header_lines <= 0)
+                    // header found
+                    if (found_header)
                     {
-                        printf("[HTTP] Too many HTTP header lines readed...\n");
-                        return false;
-                    }
+                        std::string header = std::string(line.begin(), line.end() - 2);
 
-                    line.clear();
-                } while (!found_crlf && curr_reading < read_feedback);
-            }
+                        // first header
+                        if (!first_line_readed)
+                        {
+                            first_line_readed = true;
+                            if (!read_first_line(header))
+                                return false;
+                        }
+                        else
+                        {
+                            auto delimiter_pos = header.find(": ");
+                            if (delimiter_pos != std::string::npos)
+                            {
+                                std::string key = header.substr(0, delimiter_pos);
+                                std::string value = header.substr(delimiter_pos + 2);
+                                headers[key] = value;
+                            }
+                        }
+
+                        max_http_header_lines--;
+                        if (max_http_header_lines <= 0)
+                        {
+                            printf("[HTTP] Too many HTTP header lines readed...\n");
+                            return false;
+                        }
+
+                        line.clear();
+                    }
+                } while (!found_crlf_alone && curr_reading < read_feedback);
+            } // end while !found_crlf_alone
+
+            line.clear();
 
             // read body if Content-Length is set
             auto it = headers.find("Content-Length");
             if (it != headers.end())
             {
                 uint32_t content_length;
-                try
-                {
-                    content_length = (uint32_t)std::stoul(it->second);
-                }
-                catch (...)
+                if (sscanf(it->second.c_str(), "%u", &content_length) != 1)
                 {
                     printf("[HTTPResponse] Invalid content_length code: %s\n", it->second.c_str());
                     return false;
                 }
+
                 if (content_length == 0)
                     return true;
                 else if (content_length >= HTTP_MAX_BODY_SIZE) // 100 MB limit
@@ -165,7 +163,42 @@ namespace ITKExtension
 
         bool HTTP::writeToStream(Platform::SocketTCP *socket)
         {
-            std::string request_line = mount_first_line() + "\r\n";
+            // check headers validity
+            for (const auto &header_pair : headers)
+            {
+                for (const char &ch : header_pair.first)
+                {
+                    if (!is_valid_header_character(ch))
+                    {
+                        printf("[HTTP] Invalid character in HTTP request line: %u\n", (uint8_t)ch);
+                        return false;
+                    }
+                }
+                for (const char &ch : header_pair.second)
+                {
+                    if (!is_valid_header_character(ch))
+                    {
+                        printf("[HTTP] Invalid character in HTTP request line: %u\n", (uint8_t)ch);
+                        return false;
+                    }
+                }
+            }
+
+            if (body.size() > 0)
+            {
+                if (getHeader("Content-Length") != std::to_string(body.size()))
+                {
+                    printf("[HTTP] Content-Length header does not match body size\n");
+                    return false;
+                }
+            }
+            else if (hasHeader("Content-Length"))
+            {
+                printf("[HTTP] Content-Length header set but body is empty\n");
+                return false;
+            }
+
+            std::string request_line = mount_first_line();
             for (const char &ch : request_line)
             {
                 if (!is_valid_header_character(ch))
@@ -174,38 +207,55 @@ namespace ITKExtension
                     return false;
                 }
             }
+
             uint32_t write_feedback = 0;
-            if (!socket->write_buffer((uint8_t *)request_line.c_str(), (uint32_t)request_line.size(), &write_feedback))
+            if (!socket->write_buffer((uint8_t *)request_line.c_str(), (uint32_t)request_line.length(), &write_feedback))
+                return false;
+
+            // line ending
+            const char *line_ending_crlf = "\r\n";
+            if (!socket->write_buffer((uint8_t *)line_ending_crlf, 2, &write_feedback))
                 return false;
 
             for (const auto &header_pair : headers)
             {
-                std::string header_line = header_pair.first + ": " + header_pair.second + "\r\n";
-                for (const char &ch : header_line)
-                {
-                    if (!is_valid_header_character(ch))
-                    {
-                        printf("[HTTP] Invalid character in HTTP request line: %u\n", (uint8_t)ch);
-                        return false;
-                    }
-                }
-                if (!socket->write_buffer((uint8_t *)header_line.c_str(), (uint32_t)header_line.size(), &write_feedback))
+                if (!socket->write_buffer((uint8_t *)header_pair.first.c_str(), (uint32_t)header_pair.first.length(), &write_feedback))
+                    return false;
+
+                const char *header_separator = ": ";
+                if (!socket->write_buffer((uint8_t *)header_separator, 2, &write_feedback))
+                    return false;
+
+                if (!socket->write_buffer((uint8_t *)header_pair.second.c_str(), (uint32_t)header_pair.second.length(), &write_feedback))
+                    return false;
+
+                // const char *line_ending_crlf = "\r\n";
+                if (!socket->write_buffer((uint8_t *)line_ending_crlf, 2, &write_feedback))
                     return false;
             }
 
-            // end of headers
-            const char *end_of_headers = "\r\n";
-            if (!socket->write_buffer((uint8_t *)end_of_headers, 2, &write_feedback))
+            // const char *line_ending_crlf = "\r\n";
+            if (!socket->write_buffer((uint8_t *)line_ending_crlf, 2, &write_feedback))
                 return false;
 
             // body
-            if (body.size() > 0)
-            {
-                if (!socket->write_buffer((uint8_t *)body.data(), (uint32_t)body.size(), &write_feedback))
-                    return false;
-            }
+            if (body.size() > 0 && !socket->write_buffer((uint8_t *)body.data(), (uint32_t)body.size(), &write_feedback))
+                return false;
 
             return true;
+        }
+
+        bool HTTP::hasHeader(const std::string &key) const
+        {
+            return headers.find(key) != headers.end();
+        }
+
+        std::string HTTP::getHeader(const std::string &key) const
+        {
+            auto it = headers.find(key);
+            if (it != headers.end())
+                return it->second;
+            return "";
         }
 
         HTTP &HTTP::setHeader(const std::string &key,
