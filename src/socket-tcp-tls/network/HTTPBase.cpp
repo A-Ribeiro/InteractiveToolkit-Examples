@@ -115,15 +115,15 @@ namespace ITKExtension
             line.clear();
 
             // read body if Content-Length is set
-            auto it = headers.find("Content-Length");
-            auto te_it = headers.find("Transfer-Encoding");
+            auto contentLengthHeader_it = headers.find("Content-Length");
+            auto transferEncoding_it = headers.find("Transfer-Encoding");
 
-            if (it != headers.end())
+            if (contentLengthHeader_it != headers.end())
             {
                 uint32_t content_length;
-                if (sscanf(it->second.c_str(), "%u", &content_length) != 1)
+                if (sscanf(contentLengthHeader_it->second.c_str(), "%u", &content_length) != 1)
                 {
-                    printf("[HTTPResponse] Invalid content_length code: %s\n", it->second.c_str());
+                    printf("[HTTPResponse] Invalid content_length code: %s\n", contentLengthHeader_it->second.c_str());
                     return false;
                 }
 
@@ -159,7 +159,7 @@ namespace ITKExtension
                     total_read += to_read;
                 }
             }
-            else if (te_it != headers.end() && te_it->second.find("chunked") != std::string::npos)
+            else if (transferEncoding_it != headers.end() && transferEncoding_it->second.find("chunked") != std::string::npos)
             {
                 // Read chunked encoding
                 std::vector<char> chunk_buffer;
