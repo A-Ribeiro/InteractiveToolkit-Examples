@@ -102,7 +102,9 @@ namespace ITKExtension
             std::string http_version)
         {
             headers.clear();
-            headers["Connection"] = "close";
+            // Set Connection: keep-alive to allow connection reuse
+            // This prevents the server from closing after the response
+            headers["Connection"] = "keep-alive";
 
             // Set status code and reason phrase from HTTP status code list
 

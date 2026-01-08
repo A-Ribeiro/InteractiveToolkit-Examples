@@ -120,8 +120,9 @@ namespace ITKExtension
             line.clear();
 
             // read body if Content-Length is set
-            auto contentLengthHeader_it = headers.find("Content-Length");
-            auto transferEncoding_it = headers.find("Transfer-Encoding");
+            // HTTP headers are case-insensitive (RFC 7230)
+            auto contentLengthHeader_it = findHeaderCaseInsensitive("Content-Length");
+            auto transferEncoding_it = findHeaderCaseInsensitive("Transfer-Encoding");
 
             if (contentLengthHeader_it != headers.end())
             {
@@ -161,7 +162,7 @@ namespace ITKExtension
                             return false;
                         }
                     }
-                    total_read += to_read;
+                    total_read += read_feedback;
                 }
             }
             else if (transferEncoding_it != headers.end() && transferEncoding_it->second.find("chunked") != std::string::npos)
@@ -391,14 +392,41 @@ namespace ITKExtension
             return true;
         }
 
+        std::unordered_map<std::string, std::string>::const_iterator HTTPBase::findHeaderCaseInsensitive(const std::string &key) const
+        {
+            for (auto it = headers.begin(); it != headers.end(); ++it)
+            {
+                if (it->first.size() == key.size())
+                {
+                    bool match = true;
+                    for (size_t i = 0; i < key.size(); i++)
+                    {
+                        if (std::tolower((unsigned char)it->first[i]) != std::tolower((unsigned char)key[i]))
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match)
+                        return it;
+                }
+            }
+            return headers.end();
+        }
+
+        const std::unordered_map<std::string, std::string> &HTTPBase::listHeaders() const
+        {
+            return headers;
+        }
+
         bool HTTPBase::hasHeader(const std::string &key) const
         {
-            return headers.find(key) != headers.end();
+            return findHeaderCaseInsensitive(key) != headers.end();
         }
 
         std::string HTTPBase::getHeader(const std::string &key) const
         {
-            auto it = headers.find(key);
+            auto it = findHeaderCaseInsensitive(key);
             if (it != headers.end())
                 return it->second;
             return "";

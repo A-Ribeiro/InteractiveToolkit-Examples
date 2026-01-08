@@ -53,7 +53,9 @@ namespace ITKExtension
         {
             headers.clear();
             headers["Host"] = host;
-            headers["Connection"] = "close";
+            // Don't set "Connection: close" - let HTTP/1.1 keep-alive be the default
+            // This prevents servers from closing the connection prematurely
+            headers["Connection"] = "keep-alive";
             headers["User-Agent"] = "ITK-HTTP-Client/1.0";
 
             this->method = method;

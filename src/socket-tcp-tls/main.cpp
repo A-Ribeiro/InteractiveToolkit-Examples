@@ -119,12 +119,12 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
 
         printf("Received HTTP Response: %d %s\n", res.status_code, res.reason_phrase.c_str());
         printf("Headers:\n");
-        for (const auto &header_pair : res.headers)
+        for (const auto &header_pair : res.listHeaders())
             printf("  %s: %s\n", header_pair.first.c_str(), header_pair.second.c_str());
 
         if (ITKCommon::StringUtil::contains(res.getHeader("Content-Type"), "text/plain") ||
             ITKCommon::StringUtil::contains(res.getHeader("Content-Type"), "text/html"))
-            printf("Body (%u bytes): %s\n", (uint32_t)res.body.size(), res.bodyAsString().c_str());
+            printf("Body: %s\n", res.bodyAsString().c_str());
     }
 
     printf("Closing connection...\n");

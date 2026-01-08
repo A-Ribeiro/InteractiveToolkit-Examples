@@ -26,10 +26,10 @@ namespace ITKExtension
 
             static bool is_valid_header_character(char _chr);
 
-        public:
             std::unordered_map<std::string, std::string> headers;
             std::vector<uint8_t> body;
 
+        public:
             HTTPBase() = default;
             virtual ~HTTPBase() = default;
 
@@ -39,18 +39,23 @@ namespace ITKExtension
 
             bool writeToStream(Platform::SocketTCP *socket);
 
+            const std::unordered_map<std::string, std::string> &listHeaders() const;
+
             bool hasHeader(const std::string &key) const;
 
             std::string getHeader(const std::string &key) const;
 
+            // Case-insensitive header find (HTTP headers are case-insensitive per RFC 7230)
+            std::unordered_map<std::string, std::string>::const_iterator findHeaderCaseInsensitive(const std::string &key) const;
+
             HTTPBase &setHeader(const std::string &key,
-                            const std::string &value);
+                                const std::string &value);
 
             HTTPBase &setBody(const std::string &body = "",
-                          const std::string &content_type = "text/plain");
+                              const std::string &content_type = "text/plain");
 
             HTTPBase &setBody(const uint8_t *body, uint32_t body_size,
-                          const std::string &content_type = "application/octet-stream");
+                              const std::string &content_type = "application/octet-stream");
 
             std::string bodyAsString() const;
         };
