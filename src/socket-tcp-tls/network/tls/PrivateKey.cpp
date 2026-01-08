@@ -43,20 +43,43 @@ namespace TLS
                                      const char *key_decrypt_password)
     {
         initialize_structures();
-        std::string keyStr((const char *)key, key_length);
+
+        int result;
+        bool data_is_all_alphanumeric = true;
+        for (size_t i = 0; i < key_length; ++i)
+        {
+            if (!isalnum(key[i]) && !isspace(key[i]) && key[i] != '-' && key[i] != '/' && key[i] != '=' && key[i] != '+' && key[i] != '\n' && key[i] != '\r')
+            {
+                data_is_all_alphanumeric = false;
+                break;
+            }
+        }
+
+        std::string keyStr_aux;
+
+        const uint8_t *key_to_use = key;
+        size_t key_to_use_length = key_length;
+
+        if (data_is_all_alphanumeric)
+        {
+            keyStr_aux = std::string((const char *)key, key_length);
+            key_to_use = (const uint8_t *)keyStr_aux.c_str();
+            key_to_use_length = strlen(keyStr_aux.c_str()) + 1;
+        }
 
         size_t key_decrypt_password_length = (key_decrypt_password == nullptr) ? 0 : strlen(key_decrypt_password);
 #if MBEDTLS_VERSION_MAJOR == 3
-        int result = mbedtls_pk_parse_key(&private_key_context,
-                                          (const unsigned char *)keyStr.c_str(), strlen(keyStr.c_str()) + 1,
-                                          (const unsigned char *)key_decrypt_password, key_decrypt_password_length,
-                                          mbedtls_ctr_drbg_random,
-                                          &GlobalSharedState::Instance()->ctr_drbg_context);
+        result = mbedtls_pk_parse_key(&private_key_context,
+                                      (const unsigned char *)key_to_use, key_to_use_length,
+                                      (const unsigned char *)key_decrypt_password, key_decrypt_password_length,
+                                      mbedtls_ctr_drbg_random,
+                                      &GlobalSharedState::Instance()->ctr_drbg_context);
 #else
-        int result = mbedtls_pk_parse_key(&private_key_context,
-                                          (const unsigned char *)keyStr.c_str(), strlen(keyStr.c_str()) + 1,
-                                          (const unsigned char *)key_decrypt_password, key_decrypt_password_length);
+        result = mbedtls_pk_parse_key(&private_key_context,
+                                      (const unsigned char *)key_to_use, key_to_use_length,
+                                      (const unsigned char *)key_decrypt_password, key_decrypt_password_length);
 #endif
+
         if (result != 0)
             printf("Failed to load private key: %s\n", TLS::TLSUtils::errorMessageFromReturnCode(result).c_str());
         return result == 0;
