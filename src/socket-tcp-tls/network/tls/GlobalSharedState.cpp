@@ -161,7 +161,7 @@ namespace TLS
                                            mbedtls_entropy_func,
                                            &entropy_context,
                                            (const unsigned char*) rng_curr_time_str.c_str(),
-                                           std::min(rng_curr_time_str.length(), (size_t)MBEDTLS_CTR_DRBG_MAX_SEED_INPUT)
+                                           (std::min)(rng_curr_time_str.length(), (size_t)MBEDTLS_CTR_DRBG_MAX_SEED_INPUT)
                                         );
         ITK_ABORT(result != 0, "Failed to seed DRBG: %s\n", TLSUtils::errorMessageFromReturnCode(result).c_str());
 #else

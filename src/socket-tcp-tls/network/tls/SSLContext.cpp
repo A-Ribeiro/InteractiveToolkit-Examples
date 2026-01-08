@@ -220,7 +220,7 @@ namespace TLS
                     return 0;
                 Platform::SocketTCP *tcp_socket = static_cast<Platform::SocketTCP *>(context);
                 uint32_t write_feedback;
-                if (!tcp_socket->Platform::SocketTCP::write_buffer(data, size, &write_feedback))
+                if (!tcp_socket->Platform::SocketTCP::write_buffer(data, (uint32_t)size, &write_feedback))
                 {
                     return MBEDTLS_ERR_NET_CONN_RESET;
                     // if (tcp_socket->Platform::SocketTCP::isClosed())
@@ -237,7 +237,7 @@ namespace TLS
                 Platform::SocketTCP *tcp_socket = static_cast<Platform::SocketTCP *>(context);
                 uint32_t read_feedback;
                 // tcp_socket->Platform::SocketTCP::setReadTimeout(0);
-                if (!tcp_socket->Platform::SocketTCP::read_buffer(data, size, &read_feedback))
+                if (!tcp_socket->Platform::SocketTCP::read_buffer(data, (uint32_t)size, &read_feedback))
                 {
                     if (tcp_socket->Platform::SocketTCP::isReadTimedout())
                         return MBEDTLS_ERR_SSL_TIMEOUT;
@@ -255,7 +255,7 @@ namespace TLS
             //     Platform::SocketTCP *tcp_socket = static_cast<Platform::SocketTCP *>(context);
             //     uint32_t read_feedback;
             //     tcp_socket->Platform::SocketTCP::setReadTimeout(timeout_ms);
-            //     if (!tcp_socket->Platform::SocketTCP::read_buffer(data, size, &read_feedback))
+            //     if (!tcp_socket->Platform::SocketTCP::read_buffer(data, (uint32_t)size, &read_feedback))
             //     {
             //         if (tcp_socket->Platform::SocketTCP::isReadTimedout())
             //             return MBEDTLS_ERR_SSL_TIMEOUT;

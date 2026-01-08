@@ -1,6 +1,11 @@
 #include "HTTPResponse.h"
 #include <InteractiveToolkit/ITKCommon/StringUtil.h>
 
+#if defined(_WIN32)
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+
 namespace ITKExtension
 {
     namespace Network
@@ -112,3 +117,7 @@ namespace ITKExtension
 
     }
 }
+
+#if defined(_WIN32)
+#pragma warning(pop)
+#endif

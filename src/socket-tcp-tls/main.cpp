@@ -44,7 +44,7 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
     else
     {
         addr_ipv4 = Platform::SocketTools::resolveHostname(url_or_addr_ipv4);
-        url = Platform::SocketTools::URL ("https", url_or_addr_ipv4, "/", 8444);
+        url = Platform::SocketTools::URL("https", url_or_addr_ipv4, "/", 8444);
         url.ssl = false;
     }
 
@@ -176,7 +176,7 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
         printf("server started at %s\n", server_str);
     }
 
-    Platform::ThreadPool threadPool(std::max(Platform::Thread::QueryNumberOfSystemThreads(), 4));
+    Platform::ThreadPool threadPool((std::max)(Platform::Thread::QueryNumberOfSystemThreads(), 4));
 
     Platform::Time time;
     Platform::SocketTCP *clientSocket;

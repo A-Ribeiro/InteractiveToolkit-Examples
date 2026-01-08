@@ -45,7 +45,7 @@ namespace TLS
         initialize_structures();
         std::string keyStr((const char *)key, key_length);
 
-        int key_decrypt_password_length = (key_decrypt_password == nullptr) ? 0 : strlen(key_decrypt_password);
+        size_t key_decrypt_password_length = (key_decrypt_password == nullptr) ? 0 : strlen(key_decrypt_password);
 #if MBEDTLS_VERSION_MAJOR == 3
         int result = mbedtls_pk_parse_key(&private_key_context,
                                           (const unsigned char *)keyStr.c_str(), strlen(keyStr.c_str()) + 1,

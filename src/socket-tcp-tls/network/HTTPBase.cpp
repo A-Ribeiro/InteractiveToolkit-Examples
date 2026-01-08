@@ -1,6 +1,11 @@
 #include "HTTPBase.h"
 #include <InteractiveToolkit/Platform/SocketTCP.h>
 
+#if defined(_WIN32)
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+
 namespace ITKExtension
 {
     namespace Network
@@ -135,14 +140,14 @@ namespace ITKExtension
                 body.resize(content_length);
 
                 // copy content from curr_reading to body
-                uint32_t already_read = std::min(read_feedback - curr_reading, content_length);
+                uint32_t already_read = (std::min)(read_feedback - curr_reading, content_length);
                 if (already_read > 0)
                     memcpy(&body[0], &input_buffer[curr_reading], already_read);
 
                 uint32_t total_read = already_read;
                 while (total_read < content_length)
                 {
-                    uint32_t to_read = std::min(content_length - total_read, (uint32_t)HTTP_READ_BUFFER_CHUNK_SIZE);
+                    uint32_t to_read = (std::min)(content_length - total_read, (uint32_t)HTTP_READ_BUFFER_CHUNK_SIZE);
                     if (!socket->read_buffer((uint8_t *)&body[total_read], to_read, &read_feedback))
                     {
                         if (socket->isReadTimedout())
@@ -455,3 +460,7 @@ namespace ITKExtension
 
     }
 }
+
+#if defined(_WIN32)
+#pragma warning(pop)
+#endif
