@@ -69,6 +69,15 @@ else()
   find_library(MBEDTLS_LIBRARY NAMES "mbedtls" "libmbedtls")
   find_library(MBEDX509_LIBRARY NAMES "mbedx509" "libmbedx509")
   find_library(MBEDCRYPTO_LIBRARY NAMES "mbedcrypto" "libmbedcrypto")
+  
+  # If mbedcrypto not found, try tfpsacrypto as fallback
+  if(NOT MBEDCRYPTO_LIBRARY)
+    message(STATUS "mbedcrypto not found, trying tfpsacrypto as fallback...")
+    find_library(MBEDCRYPTO_LIBRARY NAMES "tfpsacrypto" "libtfpsacrypto")
+    if(MBEDCRYPTO_LIBRARY)
+      message(STATUS "Found tfpsacrypto: ${MBEDCRYPTO_LIBRARY}")
+    endif()
+  endif()
 
   unset(MBEDTLS_VERSION CACHE)
   if(MBEDTLS_INCLUDE_DIR)
