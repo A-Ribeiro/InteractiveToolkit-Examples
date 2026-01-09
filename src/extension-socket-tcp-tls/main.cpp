@@ -86,7 +86,7 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
     {
         bool handshake_done;
         if (!client_cert_file.empty()) // use Common Name (CN) from certificate
-            handshake_done = sslSocket->handshakeAsClient(certificate_chain, TLS::CertificateChain::getCertificateCommonName(&certificate_chain->x509_crt).c_str(), true);
+            handshake_done = sslSocket->handshakeAsClient(certificate_chain, certificate_chain->getCertificateCommonName(0).c_str(), true);
         else
             handshake_done = sslSocket->handshakeAsClient(certificate_chain, url.hostname.c_str(), true);
         if (!handshake_done)
