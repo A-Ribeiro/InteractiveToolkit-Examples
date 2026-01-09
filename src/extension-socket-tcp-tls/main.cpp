@@ -5,8 +5,8 @@
 #include <iostream>
 #include <stdlib.h>
 
-#include "network/HTTP.h"
-#include "network/SocketTCP_SSL.h"
+#include <InteractiveToolkit-Extension/network/HTTP.h>
+#include <InteractiveToolkit-Extension/network/SocketTCP_SSL.h>
 
 using namespace ITKCommon;
 
@@ -316,19 +316,19 @@ int main(int argc, char *argv[])
         printf("Examples: \n"
                "\n"
                "# start server (on port: 8444):\n"
-               "./socket-tcp server\n"
+               "./extension-socket-tcp-tls server\n"
                "\n"
                "# connect to server (on port: 8444):\n"
-               "./socket-tcp connect <IP>\n"
+               "./extension-socket-tcp-tls connect <IP>\n"
                "\n"
                "# start server:\n"
-               "./socket-tcp server <port> <cert_file.crt> <private_key_file.key>\n"
+               "./extension-socket-tcp-tls server <port> <cert_file.crt> <private_key_file.key>\n"
                "\n"
                "# HTTPS wget hostname:\n"
-               "./socket-tcp wget <http|https>://<subdomain.domain:port>/<path>\n"
+               "./extension-socket-tcp-tls wget <http|https>://<subdomain.domain:port>/<path>\n"
                "\n"
                "# HTTPS wget hostname (with certificate):\n"
-               "./socket-tcp wget https://<subdomain.domain:port>/<path> <cert_file.crt>\n"
+               "./extension-socket-tcp-tls wget https://<subdomain.domain:port>/<path> <cert_file.crt>\n"
                "\n");
     }
 

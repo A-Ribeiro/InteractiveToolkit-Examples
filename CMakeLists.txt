@@ -138,4 +138,4 @@ add_subdirectory(libs/InteractiveToolkit-Extension "${CMAKE_BINARY_DIR}/lib/Inte
 
 add_subdirectory(src/extension-images)
 add_subdirectory(src/extension-writing-reading-data)
-
+add_subdirectory(src/extension-socket-tcp-tls)

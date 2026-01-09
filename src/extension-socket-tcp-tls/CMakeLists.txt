@@ -1,7 +1,7 @@
-project (socket-tcp-tls)
+project (extension-socket-tcp-tls)
 
 # set( LIB_MBEDTLS FromSource CACHE STRING "Choose the Library Source." FORCE )
-include (cmake/libmbedtls.cmake)
+# include (cmake/libmbedtls.cmake)
 
 FILE( GLOB_RECURSE PUBLIC_HEADERS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.h)
 FILE( GLOB_RECURSE SRC RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" *.cpp)
@@ -14,15 +14,16 @@ add_executable(${PROJECT_NAME} ${PUBLIC_HEADERS} ${SRC})
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "BIN")
 
 target_link_libraries( ${PROJECT_NAME} 
+    PUBLIC
     ${INTERACTIVETOOLKIT_LIBRARIES}
-    mbedtls-all
+    InteractiveToolkit-Extension
 )
 
-if(WIN32)
-    # SystemCertificates on Windows
-    target_link_libraries(${PROJECT_NAME} Crypt32)
-elseif(APPLE)
-    find_library(SECURITY_FRAMEWORK Security)
-    find_library(COREFRAMEWORK_FRAMEWORK CoreFoundation)
-    target_link_libraries(${PROJECT_NAME} ${SECURITY_FRAMEWORK} ${COREFRAMEWORK_FRAMEWORK})
-endif()
+# if(WIN32)
+#     # SystemCertificates on Windows
+#     target_link_libraries(${PROJECT_NAME} Crypt32)
+# elseif(APPLE)
+#     find_library(SECURITY_FRAMEWORK Security)
+#     find_library(COREFRAMEWORK_FRAMEWORK CoreFoundation)
+#     target_link_libraries(${PROJECT_NAME} ${SECURITY_FRAMEWORK} ${COREFRAMEWORK_FRAMEWORK})
+# endif()
