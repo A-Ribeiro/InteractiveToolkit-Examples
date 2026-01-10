@@ -6,13 +6,16 @@
 
 using namespace ITKCommon;
 
+const int SERVER_ACCEPT_QUEUE_SIZE = SOMAXCONN;
+const int SERVER_MAX_TASKS_QUEUE_SIZE = 200;
+
 void connect(const std::string addr_ipv4)
 {
 
     Platform::SocketTCP clientSocket;
 
     printf("connecting...\n");
-    if (!clientSocket.connect(addr_ipv4, Platform::NetworkConstants::PUBLIC_PORT_START))
+    if (!clientSocket.connect(Platform::SocketTools::resolveHostname(addr_ipv4), Platform::NetworkConstants::PUBLIC_PORT_START))
     {
         printf("Connect failed!!!... interrupting current thread\n");
         clientSocket.close();
@@ -25,9 +28,9 @@ void connect(const std::string addr_ipv4)
 
     char init[16] = "init";
     printf("sending: \"init\" size: %u bytes\n", (uint32_t)sizeof(init));
-    if (!clientSocket.write_buffer(
-        (uint8_t *)&init, 
-        sizeof(init)))
+    if (clientSocket.write_buffer(
+            (uint8_t *)&init,
+            sizeof(init)) != Platform::SOCKET_RESULT_OK)
     {
         printf("Failed to send handshake...\n");
         clientSocket.close();
@@ -37,10 +40,10 @@ void connect(const std::string addr_ipv4)
     printf("receiving...\n");
     char response[64];
     uint32_t read_feedback;
-    if (!clientSocket.read_buffer(
+    if (clientSocket.read_buffer(
             (uint8_t *)&response,
             sizeof(response),
-            &read_feedback))
+            &read_feedback) != Platform::SOCKET_RESULT_OK)
     {
         printf("Failed to receive handshake...read feedback: %u\n", read_feedback);
         clientSocket.close();
@@ -53,21 +56,16 @@ void connect(const std::string addr_ipv4)
     clientSocket.close();
 }
 
-bool use_blocking_sockets = true;
-
 void start_server(bool blocking = true)
 {
-
-    use_blocking_sockets = blocking;
-
     printf("start server\n");
 
-    printf("use_blocking_sockets:%i\n", use_blocking_sockets);
+    printf("use_blocking_sockets:%i\n", blocking);
 
     Platform::SocketTCPAccept serverSocket(
-        use_blocking_sockets, // blocking
-        true,                 // reuseAddress
-        true                  // noDelay
+        blocking, // blocking
+        true,     // reuseAddress
+        true      // noDelay
     );
 
     if (!serverSocket.bindAndListen(
@@ -81,54 +79,43 @@ void start_server(bool blocking = true)
         return;
     }
 
-    Platform::SocketTCP *clientSocket = new Platform::SocketTCP();
-    std::vector<Platform::Thread *> threads;
-
+    Platform::ThreadPool threadPool((std::max)(Platform::Thread::QueryNumberOfSystemThreads(), 4));
+    std::shared_ptr<Platform::SocketTCP> clientSocket = std::make_shared<Platform::SocketTCP>();
     while (!Platform::Thread::isCurrentThreadInterrupted())
     {
 
         bool connection_accepted = true;
-        if (use_blocking_sockets)
+        if (blocking)
         {
             // blocking mode
-            if (!serverSocket.accept(clientSocket))
-            {
-                if (serverSocket.isSignaled() || serverSocket.isClosed() || !serverSocket.isListening())
-                    break;
-                connection_accepted = false;
-            }
+            if (serverSocket.accept(clientSocket.get()) != Platform::SOCKET_RESULT_OK)
+                break;
         }
         else
         {
             // non-blocking mode
-            if (!serverSocket.accept(clientSocket))
+            auto result = serverSocket.accept(clientSocket.get());
+            if (result == Platform::SOCKET_RESULT_WOULD_BLOCK)
             {
                 printf("*");
                 fflush(stdout);
                 Platform::Sleep::millis(500);
-                connection_accepted = false;
+                continue;
             }
+            else if (result != Platform::SOCKET_RESULT_OK)
+                break;
         }
 
-        // clear deleted threads
-        for (int i = (int)threads.size() - 1; i >= 0; i--)
-        {
-            if (!threads[i]->isAlive())
+        threadPool.postTask([clientSocket]()
+                            {
+            if (Platform::Thread::isCurrentThreadInterrupted()) 
             {
-                printf("removing closed thread...\n");
-                delete threads[i];
-                threads.erase(threads.begin() + i);
+                printf("Thread pool finished. Closing remaining connections.\n");
+                clientSocket->close();
+                return;
             }
-        }
-
-        if (!connection_accepted)
-            continue;
-
-        Platform::Thread *aux;
-        threads.push_back(aux = new Platform::Thread([clientSocket]()
-                                                     {
             // client thread (server side)
-            Platform::SocketTCP *socket = clientSocket;
+            Platform::SocketTCP *socket = clientSocket.get();
             socket->setNoDelay(true);
 
             char client_str[32];
@@ -136,10 +123,9 @@ void start_server(bool blocking = true)
 
             char initial_string[16] = {0};
             uint32_t read_feedback;
-            if (!socket->read_buffer((uint8_t*)initial_string, sizeof(initial_string), &read_feedback)) {
+            if (socket->read_buffer((uint8_t*)initial_string, sizeof(initial_string), &read_feedback) != Platform::SOCKET_RESULT_OK) {
                 printf("Connection or thread interrupted with the read feedback: %u\n", read_feedback);
                 socket->close();
-                delete socket;
                 return;
             }
 
@@ -158,26 +144,14 @@ void start_server(bool blocking = true)
             );
 
             printf("[%s] closing socket\n", client_str);
-            socket->close();
-            delete socket;
-            }));
+            socket->close(); });
 
-        aux->start();
-
-        clientSocket = new Platform::SocketTCP();
+        clientSocket = std::make_shared<Platform::SocketTCP>();
     }
 
     serverSocket.close();
 
-    delete clientSocket;
-
-    for (size_t i = 0; i < threads.size(); i++)
-    {
-        threads[i]->interrupt();
-        threads[i]->wait();
-        delete threads[i];
-    }
-    threads.clear();
+    threadPool.finish();
 }
 
 int main(int argc, char *argv[])
@@ -194,9 +168,9 @@ int main(int argc, char *argv[])
     if (argc == 3 && (strcmp(argv[1], "connect") == 0))
         connect(argv[2]);
     else if (argc == 2 && (strcmp(argv[1], "server") == 0))
-        start_server( true );
+        start_server(true);
     else if (argc == 3 && (strcmp(argv[1], "server") == 0))
-        start_server( strcmp(argv[2], "non-block") != 0 );
+        start_server(strcmp(argv[2], "non-block") != 0);
     else
     {
         printf("Examples: \n"

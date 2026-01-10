@@ -23,9 +23,9 @@ void send_packet_run(const char* ip)
     while (!Platform::Thread::isCurrentThreadInterrupted())
     {
         uint32_t bytes_written;
-        if (!socket_write.write_buffer(server_addr,
+        if (socket_write.write_buffer(server_addr,
                                       (uint8_t *)buffer, (uint32_t)strlen(buffer) + 1,
-                                      &bytes_written))
+                                      &bytes_written) != Platform::SOCKET_RESULT_OK)
         {
             if (socket_write.isSignaled())
                 break;
@@ -40,7 +40,7 @@ void send_packet_run(const char* ip)
             char buffer[Platform::NetworkConstants::UDP_DATA_MTU_MINIMUM];
             struct sockaddr_in server_addr_copy = server_addr;
             uint32_t readed_bytes;
-            if (socket_write.read_buffer(&server_addr_copy, (uint8_t *)buffer, Platform::NetworkConstants::UDP_DATA_MTU_MINIMUM, &readed_bytes))
+            if (socket_write.read_buffer(&server_addr_copy, (uint8_t *)buffer, Platform::NetworkConstants::UDP_DATA_MTU_MINIMUM, &readed_bytes) == Platform::SOCKET_RESULT_OK)
             {
                 buffer[readed_bytes] = '\0';
                 printf("    (%i) Data from Server -> %s\n", count++, buffer);
@@ -75,7 +75,7 @@ void receive_packet_run()
         uint32_t bytes_readed;
         if (socket_server.read_buffer(&in_addr,
                                       (uint8_t *)buffer, Platform::NetworkConstants::UDP_DATA_MTU_MINIMUM,
-                                      &bytes_readed))
+                                      &bytes_readed) == Platform::SOCKET_RESULT_OK)
         {
 
             // printf("[server] data received. bytes_readed: %i, count:%i\n", bytes_readed, count++);
@@ -84,7 +84,7 @@ void receive_packet_run()
             printf("    Data from Client(%i) -> %s\n", count++, buffer);
 
             char hello_world[] = "Hello World!!!";
-            if (!socket_server.write_buffer(in_addr, (uint8_t *)hello_world, (uint32_t)strlen(hello_world) + 1))
+            if (socket_server.write_buffer(in_addr, (uint8_t *)hello_world, (uint32_t)strlen(hello_world) + 1) != Platform::SOCKET_RESULT_OK)
             {
                 printf("[server] WRITE ERROR: data not written(%i) \n", count++);
                 //Platform::Sleep::millis(300);

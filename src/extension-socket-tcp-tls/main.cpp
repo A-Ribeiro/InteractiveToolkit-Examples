@@ -84,12 +84,18 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
 
     if (sslSocket != nullptr)
     {
-        bool handshake_done;
+        bool config_ok;
         if (!client_cert_file.empty()) // use Common Name (CN) from certificate
-            handshake_done = sslSocket->handshakeAsClient(certificate_chain, certificate_chain->getCertificateCommonName(0).c_str(), true);
+            config_ok = sslSocket->configureAsClient(certificate_chain, certificate_chain->getCertificateCommonName(0).c_str(), true);
         else
-            handshake_done = sslSocket->handshakeAsClient(certificate_chain, url.hostname.c_str(), true);
-        if (!handshake_done)
+            config_ok = sslSocket->configureAsClient(certificate_chain, url.hostname.c_str(), true);
+        if (!config_ok)
+        {
+            printf("SSL Socket configuration failed!!!... interrupting current thread\n");
+            clientSocket->close();
+            return;
+        }
+        if (sslSocket->doHandshake() != Platform::SOCKET_RESULT_OK)
         {
             printf("SSL Handshake failed!!!... interrupting current thread\n");
             clientSocket->close();
@@ -179,24 +185,19 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
     Platform::ThreadPool threadPool((std::max)(Platform::Thread::QueryNumberOfSystemThreads(), 4));
 
     Platform::Time time;
-    Platform::SocketTCP *clientSocket;
+    std::shared_ptr<Platform::SocketTCP> clientSocket;
 
     if (certificate_chain != nullptr && private_key != nullptr)
-        clientSocket = new ITKExtension::Network::SocketTCP_SSL();
+        clientSocket = std::make_shared<ITKExtension::Network::SocketTCP_SSL>();
     else
-        clientSocket = new Platform::SocketTCP();
+        clientSocket = std::make_shared<Platform::SocketTCP>();
 
     while (!Platform::Thread::isCurrentThreadInterrupted())
     {
         bool connection_accepted = true;
         // blocking mode
-        if (!serverSocket.accept(clientSocket))
-        {
-            if (serverSocket.isSignaled() || serverSocket.isClosed() || !serverSocket.isListening())
-                break;
-            connection_accepted = false;
-            continue; // probably a thread interrupt was triggered... force while to check
-        }
+        if (serverSocket.accept(clientSocket.get()) != Platform::SOCKET_RESULT_OK)
+            break;
 
         time.update();
         if (time.deltaTime >= 1.0f)
@@ -222,12 +223,11 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
             {
                 printf("Thread pool finished. Closing remaining connections.\n");
                 clientSocket->close();
-                delete clientSocket;
                 return;
             }
                 
             // client thread (server side)
-            Platform::SocketTCP *socket = clientSocket;
+            Platform::SocketTCP *socket = clientSocket.get();
             socket->setNoDelay(true);
             socket->setReadTimeout(500);// 500 ms read timeout
 
@@ -239,15 +239,20 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
             if (certificate_chain_ptr != nullptr && private_key_ptr != nullptr)
             {
                 auto ssl_socket = (ITKExtension::Network::SocketTCP_SSL*)socket;
-                if (!ssl_socket->handshakeAsServer(
+                if (!ssl_socket->configureAsServer(
                         std::shared_ptr<TLS::CertificateChain>(certificate_chain_ptr, [](TLS::CertificateChain *) {}),
                         std::shared_ptr<TLS::PrivateKey>(private_key_ptr, [](TLS::PrivateKey *) {}),
                         false // verify peer
                     ))
                 {
+                    printf("SSL configuration failed on %s\n", client_str);
+                    ssl_socket->close();
+                    return;
+                }
+                if (ssl_socket->doHandshake() != Platform::SOCKET_RESULT_OK)
+                {
                     printf("SSL Handshake failed on %s\n", client_str);
                     ssl_socket->close();
-                    delete socket;
                     return;
                 }
             }
@@ -257,7 +262,6 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
             {
                 printf("Failed to read HTTP Request on %s\n", client_str);
                 socket->close();
-                delete socket;
                 return;
             }
 
@@ -274,18 +278,15 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
 
             res.writeToStream(socket);
 
-            socket->close();
-            delete socket; });
+            socket->close(); });
 
         if (certificate_chain != nullptr && private_key != nullptr)
-            clientSocket = new ITKExtension::Network::SocketTCP_SSL();
+            clientSocket = std::make_shared<ITKExtension::Network::SocketTCP_SSL>();
         else
-            clientSocket = new Platform::SocketTCP();
+            clientSocket = std::make_shared<Platform::SocketTCP>();
     }
 
     serverSocket.close();
-    delete clientSocket;
-
     threadPool.finish();
 }
 
