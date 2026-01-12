@@ -15,6 +15,8 @@ const int SERVER_MAX_TASKS_QUEUE_SIZE = 200;
 
 void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, const std::string &client_cert_file = "")
 {
+    using namespace ITKExtension::Network;
+
     Platform::SocketTools::URL url;
     std::string addr_ipv4;
 
@@ -103,43 +105,77 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
         }
     }
 
+    auto httpConnection = std::make_shared<ITKExtension::Network::HTTPConnection>(
+        clientSocket, HTTPConnectionMode::Client);
+
     {
-        ITKExtension::Network::HTTPRequest req;
-        req.setDefault(url.hostname, "GET", url.path);
-        if (!req.writeToStream(clientSocket.get()))
+        auto req = HTTPRequestAsync::CreateShared();
+        req->setDefault(url.hostname, "GET", url.path);
+        if (!httpConnection->clientBeginWriteRequest(req))
         {
-            printf("Failed to send HTTP Request...\n");
-            clientSocket->close();
+            printf("Failed to begin writing HTTP request...\n");
+            httpConnection->close();
             return;
+        }
+        while (httpConnection->getState() != HTTPConnectionState::Client_WritingRequestComplete)
+        {
+            auto result = httpConnection->process();
+            if (result == HTTPProcessingResult::Error)
+            {
+                printf("HTTP Connection processing error during request write...\n");
+                httpConnection->close();
+                return;
+            }
+            else if (result == HTTPProcessingResult::InProgress)
+            {
+                printf("Timeout on client writing socket... keep trying.\n");
+                Platform::Sleep::millis(1);
+            }
         }
     }
 
     {
-        ITKExtension::Network::HTTPResponse res;
-        if (!res.readFromStream(clientSocket.get(), true))
+        if (!httpConnection->clientBeginReadResponse())
         {
-            printf("Failed to read HTTP Response...\n");
-            clientSocket->close();
+            printf("Failed to begin reading HTTP response...\n");
+            httpConnection->close();
             return;
         }
+        while (httpConnection->getState() != HTTPConnectionState::Client_ReadingResponseComplete)
+        {
+            auto result = httpConnection->process();
+            if (result == HTTPProcessingResult::Error)
+            {
+                printf("HTTP Connection processing error during request write...\n");
+                httpConnection->close();
+                return;
+            }
+            else if (result == HTTPProcessingResult::InProgress)
+            {
+                printf("Timeout on client reading socket... keep trying.\n");
+                Platform::Sleep::millis(1);
+            }
+        }
 
-        printf("Received HTTP Response: %d %s\n", res.status_code, res.reason_phrase.c_str());
+        auto res = httpConnection->getResponse();
+        printf("Received HTTP Response: %d %s\n", res->status_code, res->reason_phrase.c_str());
         printf("Headers:\n");
-        for (const auto &header_pair : res.listHeaders())
+        for (const auto &header_pair : res->listHeaders())
             printf("  %s: %s\n", header_pair.first.c_str(), header_pair.second.c_str());
 
-        if (ITKCommon::StringUtil::contains(res.getHeader("Content-Type"), "text/plain") ||
-            ITKCommon::StringUtil::contains(res.getHeader("Content-Type"), "text/html"))
-            printf("Body: %s\n", res.bodyAsString().c_str());
+        if (ITKCommon::StringUtil::contains(res->getHeader("Content-Type"), "text/plain") ||
+            ITKCommon::StringUtil::contains(res->getHeader("Content-Type"), "text/html"))
+            printf("Body: %s\n", res->bodyAsString().c_str());
     }
 
     printf("Closing connection...\n");
-
-    clientSocket->close();
+    httpConnection->close();
+    // clientSocket->close();
 }
 
 void start_server(int port = 8444, const std::string &cert_file = "", const std::string &private_key_file = "")
 {
+    using namespace ITKExtension::Network;
 
     // std::shared_ptr<ITKExtension::Network::SocketTCP_SSL> sslSocket;
     std::shared_ptr<TLS::CertificateChain> certificate_chain;
@@ -257,28 +293,63 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
                 }
             }
 
-            ITKExtension::Network::HTTPRequest req;
-            if (!req.readFromStream(socket, false))
+            auto httpConnection = std::make_shared<ITKExtension::Network::HTTPConnection>(
+                clientSocket, HTTPConnectionMode::Server);
+
+            while (httpConnection->getState() != HTTPConnectionState::Server_ReadingRequestComplete)
             {
-                printf("Failed to read HTTP Request on %s\n", client_str);
-                socket->close();
-                return;
+                auto result = httpConnection->process();
+                if (result == HTTPProcessingResult::Error)
+                {
+                    printf("HTTP Connection processing error during request write...\n");
+                    httpConnection->close();
+                    return;
+                }
+                else if (result == HTTPProcessingResult::InProgress) 
+                {
+                    printf("Timeout on server reading socket from %s... keep trying.\n", client_str);
+                    Platform::Sleep::millis(1);
+                }
             }
 
-            ITKExtension::Network::HTTPResponse res;
 
-            if (req.method == "GET" && req.path == "/")
-                res.setDefault(200)
+            auto req = httpConnection->getRequest();
+
+            auto res = HTTPResponseAsync::CreateShared();
+
+            if (req->method == "GET" && req->path == "/")
+                res->setDefault(200)
                     .setBody(
                     "Hello! This is a response from the C++ TCP server.\nYour IP is: " + std::string(client_str),
                     "text/plain");
             else 
-                res.setDefault(404)
-                    .setBody(res.reason_phrase,"text/plain");
+                res->setDefault(404)
+                    .setBody(res->reason_phrase,"text/plain");
 
-            res.writeToStream(socket);
 
-            socket->close(); });
+            if (!httpConnection->serverBeginWriteResponse(res))
+            {
+                printf("Failed to begin reading HTTP response...\n");
+                httpConnection->close();
+                return;
+            }
+            while (httpConnection->getState() != HTTPConnectionState::Server_WritingResponseComplete)
+            {
+                auto result = httpConnection->process();
+                if (result == HTTPProcessingResult::Error)
+                {
+                    printf("HTTP Connection processing error during request write...\n");
+                    httpConnection->close();
+                    return;
+                }
+                else if (result == HTTPProcessingResult::InProgress) 
+                {
+                    printf("Timeout on server writing socket from %s... keep trying.\n", client_str);
+                    Platform::Sleep::millis(1);
+                }
+            }
+
+            httpConnection->close(); });
 
         if (certificate_chain != nullptr && private_key != nullptr)
             clientSocket = std::make_shared<ITKExtension::Network::SocketTCP_SSL>();
