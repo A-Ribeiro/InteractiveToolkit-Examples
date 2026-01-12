@@ -63,7 +63,7 @@ public:
         // remove closed connections
         {
             Platform::AutoLock auto_lock(&mutex);
-            for (ssize_t i = (ssize_t)to_remove.size() - 1; i >= 0; i--)
+            for (ptrdiff_t i = (ptrdiff_t)to_remove.size() - 1; i >= 0; i--)
             {
                 auto connection_it = connection_list.begin() + to_remove[i];
                 (*connection_it)->close();
