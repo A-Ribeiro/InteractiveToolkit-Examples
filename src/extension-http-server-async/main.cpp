@@ -9,7 +9,7 @@ using namespace ITKExtension::Network;
 
 // Server configuration
 const uint16_t SERVER_PORT = 8080;
-int THREAD_POOL_SIZE = 1;//Platform::Thread::QueryNumberOfSystemThreads();
+int THREAD_POOL_SIZE = Platform::Thread::QueryNumberOfSystemThreads();
 const int MAX_CONNECTIONS_PER_THREAD = 100;
 
 // Connection manager for each thread
