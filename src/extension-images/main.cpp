@@ -30,11 +30,11 @@ int main(int argc, char *argv[])
     {
         int output_size;
         auto buff = ITKExtension::Image::PNG::writePNGToMemory(&output_size, w, h, 3, (char *)image.array);
-        auto file = fopen("output_from_memory.png", "wb");
+        auto file = ITKCommon::FileSystem::File::fopen("output_from_memory.png", "wb");
         if (file)
         {
             fwrite(buff, sizeof(char), output_size, file);
-            fclose(file);
+            ITKCommon::FileSystem::File::fclose(file);
         }
         ITKExtension::Image::PNG::closePNG(buff);
     }
@@ -46,11 +46,11 @@ int main(int argc, char *argv[])
     {
         int output_size;
         auto buff = ITKExtension::Image::JPG::writeJPGToMemory(&output_size, w, h, 3, (char *)image.array);
-        auto file = fopen("output_from_memory.jpg", "wb");
+        auto file = ITKCommon::FileSystem::File::fopen("output_from_memory.jpg", "wb");
         if (file)
         {
             fwrite(buff, sizeof(char), output_size, file);
-            fclose(file);
+            ITKCommon::FileSystem::File::fclose(file);
         }
         ITKExtension::Image::JPG::closeJPG(buff);
     }

@@ -11,8 +11,7 @@ int main(int argc, char *argv[])
     //
     // 32bit generator
     //
-    Random rnd32;
-    rnd32.randomSeed();
+    Random32 rnd32(Random32::TypeDefinition::randomSeed());
     printf("32bit generator\n");
     printf("rnd32.getRange(10,15): %i\n", rnd32.getRange(10, 15));
     printf("rnd32.next01<float>(): %f\n", rnd32.next01<float>());
@@ -22,8 +21,7 @@ int main(int argc, char *argv[])
     //
     // 64bit generator
     //
-    Random64 rnd64;
-    rnd64.randomSeed();
+    Random64 rnd64(Random64::TypeDefinition::randomSeed());
     printf("64bit generator\n");
     printf("rnd64.getRange(10,15): %i\n", rnd64.getRange(10, 15));
     printf("rnd64.next01<float>(): %f\n", rnd64.next01<float>());
