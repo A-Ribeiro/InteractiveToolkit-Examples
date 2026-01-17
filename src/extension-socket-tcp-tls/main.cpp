@@ -167,7 +167,8 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
             printf("  %s: %s\n", header_pair.first.c_str(), header_pair.second.c_str());
 
         if (ITKCommon::StringUtil::contains(res->getHeader("Content-Type"), "text/plain") ||
-            ITKCommon::StringUtil::contains(res->getHeader("Content-Type"), "text/html"))
+            ITKCommon::StringUtil::contains(res->getHeader("Content-Type"), "text/html") ||
+            ITKCommon::StringUtil::contains(res->getHeader("Content-Type"), "application/json"))
             printf("Body: %s\n", res->bodyAsString().c_str());
     }
 
