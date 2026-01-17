@@ -44,10 +44,12 @@ public:
         {
             auto &connection = connections_copy[i];
 
-            HTTPProcessingResult result = connection->process();
+            connection->process();
 
             HTTPConnectionState curr_conn_state = connection->getState();
-            if (curr_conn_state == HTTPConnectionState::Server_ReadingRequestComplete)
+            if (curr_conn_state == HTTPConnectionState::Server_ReadingRequestHeadersComplete)
+                connection->serverContinueBodyReading();
+            else if (curr_conn_state == HTTPConnectionState::Server_ReadingRequestBodyComplete)
                 handleRequest(connection);
             else if (curr_conn_state == HTTPConnectionState::Server_WritingResponseComplete)
                 to_remove.push_back(i);

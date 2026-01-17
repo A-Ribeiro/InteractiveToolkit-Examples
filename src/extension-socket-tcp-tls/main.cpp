@@ -135,13 +135,13 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
     }
 
     {
-        if (!httpConnection->clientBeginReadResponse())
+        if (!httpConnection->clientBeginReadResponseHeaders())
         {
             printf("Failed to begin reading HTTP response...\n");
             httpConnection->close();
             return;
         }
-        while (httpConnection->getState() != HTTPConnectionState::Client_ReadingResponseComplete)
+        while (httpConnection->getState() != HTTPConnectionState::Client_ReadingResponseBodyComplete)
         {
             auto result = httpConnection->process();
             if (result == HTTPProcessingResult::Error)
@@ -152,7 +152,10 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
             }
             else if (result == HTTPProcessingResult::InProgress)
             {
-                printf("Timeout on client reading socket... keep trying.\n");
+                if (httpConnection->getState() == HTTPConnectionState::Client_ReadingResponseHeadersComplete)
+                    httpConnection->clientContinueBodyReading();
+                else
+                    printf("Timeout on client reading socket... keep trying.\n");
                 Platform::Sleep::millis(1);
             }
         }
@@ -296,7 +299,7 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
             auto httpConnection = std::make_shared<ITKExtension::Network::HTTPConnection>(
                 clientSocket, HTTPConnectionMode::Server);
 
-            while (httpConnection->getState() != HTTPConnectionState::Server_ReadingRequestComplete)
+            while (httpConnection->getState() != HTTPConnectionState::Server_ReadingRequestBodyComplete)
             {
                 auto result = httpConnection->process();
                 if (result == HTTPProcessingResult::Error)
@@ -307,7 +310,10 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
                 }
                 else if (result == HTTPProcessingResult::InProgress) 
                 {
-                    printf("Timeout on server reading socket from %s... keep trying.\n", client_str);
+                    if (httpConnection->getState() == HTTPConnectionState::Server_ReadingRequestHeadersComplete)
+                        httpConnection->serverContinueBodyReading();
+                    else
+                        printf("Timeout on server reading socket from %s... keep trying.\n", client_str);
                     Platform::Sleep::millis(1);
                 }
             }
