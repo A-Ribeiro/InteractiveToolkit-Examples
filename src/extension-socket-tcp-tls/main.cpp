@@ -13,9 +13,11 @@ using namespace ITKCommon;
 const int SERVER_ACCEPT_QUEUE_SIZE = SOMAXCONN;
 const int SERVER_MAX_TASKS_QUEUE_SIZE = 200;
 
-void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, const std::string &client_cert_file = "")
+void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, const std::string &client_cert_file_ = "")
 {
     using namespace ITKExtension::Network;
+
+    std::string client_cert_file = client_cert_file_;
 
     Platform::SocketTools::URL url;
     std::string addr_ipv4;
@@ -86,22 +88,67 @@ void connect(const std::string &url_or_addr_ipv4, bool use_full_url_as_input, co
 
     if (sslSocket != nullptr)
     {
-        bool config_ok;
-        if (!client_cert_file.empty()) // use Common Name (CN) from certificate
-            config_ok = sslSocket->configureAsClient(certificate_chain, certificate_chain->getCertificateCommonName(0).c_str(), true);
-        else
-            config_ok = sslSocket->configureAsClient(certificate_chain, url.hostname.c_str(), true);
-        if (!config_ok)
+        bool try_again = true;
+        bool cert_added = false;
+        while (try_again)
         {
-            printf("SSL Socket configuration failed!!!... interrupting current thread\n");
-            clientSocket->close();
-            return;
-        }
-        if (sslSocket->doHandshake() != Platform::SOCKET_RESULT_OK)
-        {
-            printf("SSL Handshake failed!!!... interrupting current thread\n");
-            clientSocket->close();
-            return;
+
+            bool config_ok;
+            if (!client_cert_file.empty()) // use Common Name (CN) from certificate
+                config_ok = sslSocket->configureAsClient(certificate_chain, certificate_chain->getCertificate(0)->getSubjectCommonName().c_str(), true);
+            else
+                config_ok = sslSocket->configureAsClient(certificate_chain, url.hostname.c_str(), true);
+            if (!config_ok)
+            {
+                printf("SSL Socket configuration failed!!!... interrupting current thread\n");
+                clientSocket->close();
+                return;
+            }
+
+            try_again = false;
+            auto res = sslSocket->doHandshake([&](const std::string &error, std::shared_ptr<TLS::Certificate> certificate)
+                                              {
+                if (cert_added)
+                    return; // already added cert, avoid loop
+                auto der_encoded = certificate->getDEREncoded();
+                
+                // the client custom certificate needs to be the first, and add system certs after
+
+                certificate_chain = TLS::CertificateChain::CreateShared();
+                certificate_chain->addCertificate(der_encoded.data(), der_encoded.size());
+                certificate_chain->addSystemCertificates();
+
+                // certificate_chain->specialAddCertificateAsFirst(der_encoded.data(), der_encoded.size());
+
+                client_cert_file = "force_load_first_certificate_from_server";
+                printf(" Invalid certificate from: %s\n", certificate->getSubjectCommonName().c_str());
+                cert_added = true; 
+                try_again = true; });
+
+            if (res == Platform::SOCKET_RESULT_WOULD_BLOCK || res == Platform::SOCKET_RESULT_TIMEOUT)
+                Platform::Sleep::millis(1); // avoid busy wait and retry
+            else if (res != Platform::SOCKET_RESULT_OK || Platform::Thread::isCurrentThreadInterrupted())
+            {
+                if (try_again)
+                {
+                    // recreate sslSocket
+                    clientSocket = sslSocket = ITKExtension::Network::SocketTCP_SSL::CreateShared();
+                    if (!clientSocket->connect(addr_ipv4, url.port))
+                    {
+                        printf("Connect failed!!!... interrupting current thread\n");
+                        clientSocket->close();
+                        return;
+                    }
+                    clientSocket->setNoDelay(true);
+
+                    continue;
+                }
+                printf("SSL Handshake failed!!!... interrupting current thread\n");
+                clientSocket->close();
+                return;
+            }
+            else
+                break; // handshake successful
         }
     }
 
@@ -289,11 +336,20 @@ void start_server(int port = 8444, const std::string &cert_file = "", const std:
                     ssl_socket->close();
                     return;
                 }
-                if (ssl_socket->doHandshake() != Platform::SOCKET_RESULT_OK)
+                while (true)
                 {
-                    printf("SSL Handshake failed on %s\n", client_str);
-                    ssl_socket->close();
-                    return;
+                    auto res = ssl_socket->doHandshake();
+                    if (res == Platform::SOCKET_RESULT_WOULD_BLOCK || res == Platform::SOCKET_RESULT_TIMEOUT)
+                        Platform::Sleep::millis(1); // avoid busy wait and retry
+                    else
+                    if (res != Platform::SOCKET_RESULT_OK || Platform::Thread::isCurrentThreadInterrupted())
+                    {
+                        printf("SSL Handshake failed on %s\n", client_str);
+                        ssl_socket->close();
+                        return;
+                    }
+                    else 
+                        break; // handshake successful
                 }
             }
 
