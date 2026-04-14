@@ -134,10 +134,20 @@ add_subdirectory(src/math-core-simd-test)
 
 # new io testing code
 
+set(ITKEXT_BCRYPT OFF CACHE BOOL "Set this if you want building bcrypt support" )
+set(ITKEXT_FONT OFF CACHE BOOL "Set this if you want building font+atlas support" )
+set(ITKEXT_IMAGE ON CACHE BOOL "Set this if you want building image(JPEG+PNG) support" )
+set(ITKEXT_IMAGE_ATLAS OFF CACHE BOOL "Set this if you want building image/texture atlas support" )
+set(ITKEXT_MODEL OFF CACHE BOOL "Set this if you want building model(BASOF) support" )
+set(ITKEXT_NETWORK ON CACHE BOOL "Set this if you want building network support" )
+set(ITKEXT_NETWORK_TLS OFF CACHE BOOL "Set this if you want building network/tls (mbedtls) support" )
+
 add_subdirectory(libs/InteractiveToolkit-Extension "${CMAKE_BINARY_DIR}/lib/InteractiveToolkit-Extension")
 
 add_subdirectory(src/extension-images)
 add_subdirectory(src/extension-writing-reading-data)
-add_subdirectory(src/extension-socket-tcp-tls)
+if (ITKEXT_NETWORK_TLS)
+    add_subdirectory(src/extension-socket-tcp-tls)
+endif()
 add_subdirectory(src/extension-http-server-async)
 add_subdirectory(src/extension-websocket)
