@@ -18,7 +18,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-include(cmake_tools.cmake)
+#include(cmake_tools.cmake)
 #include(cmake_include.cmake)
 
 # reset global variables
@@ -40,7 +40,7 @@ if(WIN32)
     #
     if(CMAKE_COMPILER_IS_GNUCXX)
 
-        if (CMAKE_BUILD_TYPE STREQUAL Release)
+        if (CMAKE_BUILD_TYPE STREQUAL "Release")
             add_definitions(-DNDEBUG)
             add_compile_options(-O3 -fno-strict-aliasing)
         endif()
@@ -68,7 +68,7 @@ elseif(APPLE)
     #
     # MacOS X, iOS, watchOS, tvOS (since 3.10.3)
     #
-    if (CMAKE_BUILD_TYPE STREQUAL Release)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
         add_definitions(-DNDEBUG)
         add_compile_options(-O3 -fno-strict-aliasing)
     endif()
@@ -79,10 +79,10 @@ elseif(UNIX)
     #
     # Linux, BSD, Solaris, Minix
     #
-    if (CMAKE_BUILD_TYPE STREQUAL Release)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
         add_definitions(-DNDEBUG)
         add_compile_options(-O3 -fno-strict-aliasing)
-    elseif( CMAKE_BUILD_TYPE STREQUAL Debug)
+    elseif( CMAKE_BUILD_TYPE STREQUAL "Debug")
         add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
         SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -static-libasan")
     endif()
@@ -103,9 +103,22 @@ endif()
 
 add_subdirectory(libs/InteractiveToolkit "${CMAKE_BINARY_DIR}/lib/InteractiveToolkit")
 find_package(InteractiveToolkit REQUIRED)
-include_directories(${INTERACTIVETOOLKIT_INCLUDE_DIRS})
-add_compile_options(${INTERACTIVETOOLKIT_COMPILE_OPTIONS})
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${INTERACTIVETOOLKIT_LINK_OPTIONS}")
+
+# include_directories(${INTERACTIVETOOLKIT_INCLUDE_DIRS})
+# add_compile_options(${INTERACTIVETOOLKIT_COMPILE_OPTIONS})
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${INTERACTIVETOOLKIT_LINK_OPTIONS}")
+
+set(ITKEXT_BCRYPT OFF CACHE BOOL "Set this if you want building bcrypt support" )
+set(ITKEXT_FONT OFF CACHE BOOL "Set this if you want building font+atlas support" )
+set(ITKEXT_IMAGE ON CACHE BOOL "Set this if you want building image(JPEG+PNG) support" )
+set(ITKEXT_IMAGE_ATLAS OFF CACHE BOOL "Set this if you want building image/texture atlas support" )
+set(ITKEXT_MODEL OFF CACHE BOOL "Set this if you want building model(BASOF) support" )
+set(ITKEXT_NETWORK ON CACHE BOOL "Set this if you want building network support" )
+set(ITKEXT_NETWORK_TLS OFF CACHE BOOL "Set this if you want building network/tls (mbedtls) support" )
+
+if (NOT TARGET InteractiveToolkit-Extension)
+    add_subdirectory(libs/InteractiveToolkit-Extension "${CMAKE_BINARY_DIR}/lib/InteractiveToolkit-Extension")
+endif()
 
 add_subdirectory(src/astar-on-roguelike-matrix)
 add_subdirectory(src/callback-handling)
@@ -133,17 +146,6 @@ add_subdirectory(src/fixed-point)
 add_subdirectory(src/math-core-simd-test)
 
 # new io testing code
-
-set(ITKEXT_BCRYPT OFF CACHE BOOL "Set this if you want building bcrypt support" )
-set(ITKEXT_FONT OFF CACHE BOOL "Set this if you want building font+atlas support" )
-set(ITKEXT_IMAGE ON CACHE BOOL "Set this if you want building image(JPEG+PNG) support" )
-set(ITKEXT_IMAGE_ATLAS OFF CACHE BOOL "Set this if you want building image/texture atlas support" )
-set(ITKEXT_MODEL OFF CACHE BOOL "Set this if you want building model(BASOF) support" )
-set(ITKEXT_NETWORK ON CACHE BOOL "Set this if you want building network support" )
-set(ITKEXT_NETWORK_TLS OFF CACHE BOOL "Set this if you want building network/tls (mbedtls) support" )
-
-add_subdirectory(libs/InteractiveToolkit-Extension "${CMAKE_BINARY_DIR}/lib/InteractiveToolkit-Extension")
-
 add_subdirectory(src/extension-images)
 add_subdirectory(src/extension-writing-reading-data)
 if (ITKEXT_NETWORK_TLS)

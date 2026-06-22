@@ -15,3 +15,6 @@ target_link_libraries( ${PROJECT_NAME}
     ${INTERACTIVETOOLKIT_LIBRARIES}
     InteractiveToolkit-Extension
 )
+target_include_directories(${PROJECT_NAME} PUBLIC ${INTERACTIVETOOLKIT_INCLUDE_DIRS})
+target_compile_options(${PROJECT_NAME} PUBLIC ${INTERACTIVETOOLKIT_COMPILE_OPTIONS})
+target_link_options(${PROJECT_NAME} PUBLIC ${INTERACTIVETOOLKIT_LINK_OPTIONS})
