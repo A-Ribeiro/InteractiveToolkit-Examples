@@ -35,10 +35,10 @@ int main(int argc, char *argv[])
     uint64_t block_count = (element_count + thread_count - 1) / thread_count;
 
     printf("Initializing random points...\n");
-    for (uint64_t i = 0; i < block_count; i++)
+    for (uint64_t i = 0; i < thread_count; i++)
     {
-        uint64_t i_start = thread_count * i;
-        uint64_t i_end = i_start + thread_count;
+        uint64_t i_start = block_count * i;
+        uint64_t i_end = i_start + block_count;
         if (i_end > element_count)
             i_end = element_count;
         threadPool.postTask(
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
                 completion_semaphore.release();
             });
     }
-    for (uint64_t i = 0; i < block_count; i++)
+    for (uint64_t i = 0; i < thread_count; i++)
         completion_semaphore.blockingAcquire();
 
     //
@@ -67,10 +67,10 @@ int main(int argc, char *argv[])
 
     // create index array
     printf("Setting index array...\n");
-    for (uint64_t i = 0; i < block_count; i++)
+    for (uint64_t i = 0; i < thread_count; i++)
     {
-        uint64_t i_start = thread_count * i;
-        uint64_t i_end = i_start + thread_count;
+        uint64_t i_start = block_count * i;
+        uint64_t i_end = i_start + block_count;
         if (i_end > element_count)
             i_end = element_count;
         threadPool.postTask(
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
                 completion_semaphore.release();
             });
     }
-    for (uint64_t i = 0; i < block_count; i++)
+    for (uint64_t i = 0; i < thread_count; i++)
         completion_semaphore.blockingAcquire();
 
     // for (uint32_t i = 0; i < (uint32_t)ref_array.size(); i++)
@@ -141,10 +141,10 @@ int main(int argc, char *argv[])
 
     // create index array
     printf("Setting index array...\n");
-    for (uint64_t i = 0; i < block_count; i++)
+    for (uint64_t i = 0; i < thread_count; i++)
     {
-        uint64_t i_start = thread_count * i;
-        uint64_t i_end = i_start + thread_count;
+        uint64_t i_start = block_count * i;
+        uint64_t i_end = i_start + block_count;
         if (i_end > element_count)
             i_end = element_count;
         threadPool.postTask(
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
                 completion_semaphore.release();
             });
     }
-    for (uint64_t i = 0; i < block_count; i++)
+    for (uint64_t i = 0; i < thread_count; i++)
         completion_semaphore.blockingAcquire();
     // for (uint32_t i = 0; i < (uint32_t)ref_array.size(); i++)
     // {
