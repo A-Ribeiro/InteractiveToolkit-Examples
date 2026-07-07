@@ -44,7 +44,8 @@ int main(int argc, char *argv[])
         threadPool.postTask(
             [&completion_semaphore, i_start, i_end, &rnd_points, origin]()
             {
-                MathRandomExt<Random> mathRandom(Random::Instance());
+                ITKCommon::RandomTemplate<uint32_t> _rnd(RandomDefinition<uint32_t>::randomSeed());
+                MathRandomExt<ITKCommon::RandomTemplate<uint32_t>> mathRandom(&_rnd);
                 for (uint64_t j = i_start; j < i_end; j++)
                 {
                     auto &pt = rnd_points[j];
