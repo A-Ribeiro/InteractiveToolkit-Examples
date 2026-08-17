@@ -14,9 +14,9 @@ int main(int argc, char *argv[])
     World<char> roguelikeMatrix;
 
     // setup element to char map
-    roguelikeMatrix.element_map[Element::NonWalkPlace] = '.';
-    roguelikeMatrix.element_map[Element::WalkPlace] = ' ';
-    roguelikeMatrix.element_map[Element::Edge] = 'o';
+    roguelikeMatrix.element_map[(int)Element::NonWalkPlace] = '.';
+    roguelikeMatrix.element_map[(int)Element::WalkPlace] = ' ';
+    roguelikeMatrix.element_map[(int)Element::Edge] = 'o';
 
     roguelikeMatrix.generate(MathCore::vec2i(120, 27), // matrix_size
                              10,                       // max_areas
