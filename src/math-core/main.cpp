@@ -126,7 +126,7 @@ public:
 			GEN<mat4f>::fromEulerHomogeneous(-camera_angle_x_rad, -camera_angle_y_rad, 0);
 		mat4f mvp = projection * camera_inv;
 
-		// 1) project -> 2) convert to euclidian space -> 3) convert to screen space
+		// 1) project -> 2) convert to Euclidean space -> 3) convert to screen space
 		for (int i = 0; i < (int)model_vertex.size(); i++)
 		{
 			vec4f vec4_projected_vertex = mvp * model_vertex[i];
